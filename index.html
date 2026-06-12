@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lead CRM · Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">📈</span> Lead&nbsp;CRM
+      </div>
+      <a class="nav-item active" data-view="dashboard"><span class="ico">📊</span> Dashboard</a>
+      <a class="nav-item" data-view="pipeline"><span class="ico">🗂️</span> Pipeline</a>
+      <a class="nav-item" data-view="leads"><span class="ico">👥</span> Alle Leads</a>
+      <div class="spacer"></div>
+      <a class="form-link" href="formular.html" target="_blank">
+        🌐 Öffentliches Lead-Formular<br /><b>formular.html öffnen →</b>
+      </a>
+    </aside>
+
+    <!-- Main -->
+    <div class="main">
+      <header class="topbar">
+        <h1 id="view-title">Dashboard</h1>
+        <div class="search">
+          <span class="ico">🔍</span>
+          <input id="global-search" type="text" placeholder="Leads durchsuchen…" />
+        </div>
+        <button class="btn btn-primary" id="btn-new-lead">＋ Neuer Lead</button>
+      </header>
+
+      <main class="content">
+        <!-- ===== Dashboard ===== -->
+        <section class="view active" id="view-dashboard">
+          <div class="stats" id="stat-cards"></div>
+          <div class="panel">
+            <div class="panel-head">
+              <h2>🆕 Neueste Leads</h2>
+              <div class="right">
+                <button class="btn btn-sm" id="btn-export">⬇︎ CSV-Export</button>
+              </div>
+            </div>
+            <div id="recent-table"></div>
+          </div>
+        </section>
+
+        <!-- ===== Pipeline ===== -->
+        <section class="view" id="view-pipeline">
+          <div class="pipeline" id="pipeline-board"></div>
+        </section>
+
+        <!-- ===== Alle Leads ===== -->
+        <section class="view" id="view-leads">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Alle Leads</h2>
+              <div class="right">
+                <button class="btn btn-sm" id="btn-export-2">⬇︎ CSV-Export</button>
+              </div>
+            </div>
+            <div class="filter-chips" id="stage-filter"></div>
+            <div id="leads-table"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ===== Lead Detail / Edit Modal ===== -->
+  <div class="overlay" id="overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/store.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
