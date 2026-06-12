@@ -8,7 +8,13 @@ import { Lead } from "./types";
  * ausreichend; bei Bedarf später gegen SQLite/Postgres austauschbar.
  */
 
-const DATA_DIR = path.join(process.cwd(), "data");
+// Auf Serverless-Hostern (z.B. Vercel) ist nur /tmp beschreibbar. Dort liegen
+// die Daten dann temporär (gut für eine Demo). Lokal/persistent: ./data.
+// Für dauerhaften Betrieb DATA_DIR auf ein beschreibbares Volume setzen oder
+// den Datastore gegen eine echte DB tauschen.
+const DATA_DIR =
+  process.env.DATA_DIR ||
+  (process.env.VERCEL ? "/tmp/lead-dashboard-data" : path.join(process.cwd(), "data"));
 const DATA_FILE = path.join(DATA_DIR, "leads.json");
 
 // Serialisiert Schreibzugriffe, damit parallele Requests die Datei nicht zerschießen.
