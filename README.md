@@ -1,80 +1,70 @@
 # 🤖 Lead Dashboard – Chatbot-Automatisierung
 
-Ein Dashboard, um Leads für dein **KI-/Chatbot-Automatisierungs-Business** (n8n,
-Flowise) zu sammeln, **automatisch zu qualifizieren** und abzuarbeiten.
+Dein **privates** Dashboard, um Leads für die **Kaltakquise** zu finden, automatisch
+zu qualifizieren und abzuarbeiten. Gebaut für KI-/Chatbot-Automatisierungs-Business.
 
-Die Kernidee: **Firmen ohne Chatbot + mit schlechter Erreichbarkeit = deine heißesten Leads.**
-Genau das erkennt und scored das Dashboard automatisch.
+**Kernidee:** Firmen *ohne Chatbot* + mit *schlechter Erreichbarkeit* = deine heißesten Leads.
 
 ## Was es kann
 
-- **Leads aus mehreren Quellen** – Google Maps, Instagram, LinkedIn (via n8n) + manuell.
-- **Automatische Qualifizierung** – analysiert die Website eines Leads und erkennt:
+- **🔍 Leads finden (Google Maps):** Branche + Stadt eingeben → das Dashboard holt
+  über die Google Places API lokale Unternehmen (Name, Website, Telefon, Adresse).
+  Ohne API-Key läuft alles im **Demo-Modus** mit Beispiel-Leads.
+- **Automatische Qualifizierung:** analysiert jede Website und erkennt
   - ob bereits ein **Chatbot / Live-Chat** läuft (Intercom, Drift, Crisp, Tawk.to,
-    HubSpot, Tidio, ManyChat, Landbot, Botpress, Voiceflow u.v.m.)
+    HubSpot, Tidio, ManyChat, Landbot, Botpress, Voiceflow … 19 Anbieter)
   - die **Erreichbarkeit** (E-Mail, Telefon, WhatsApp, Live-Chat, Kontaktformular)
-- **Lead-Scoring (0–100)** mit nachvollziehbaren Gründen und Tier (🔥 Heiß / 🌤 Warm / ❄️ Kalt).
+- **Lead-Scoring (0–100)** mit Gründen und Tier (🔥 Heiß / 🌤 Warm / ❄️ Kalt).
+- **Kaltakquise-Pipeline:** Status pro Lead (Neu → Kontaktiert → Geantwortet → Gewonnen / Verloren).
 - **Filtern & Suchen** nach Quelle, Status, Tier, „nur ohne Chatbot", Volltext.
-- **Pipeline-Status** pro Lead: Neu → Kontaktiert → Geantwortet → Gewonnen / Verloren.
-- **Deduplizierung** beim Import (per Website/E-Mail/Social/Name).
+- **🔒 Passwort-Login:** nur du kommst rein.
 
-## Schnellstart
+## Schnellstart (lokal am Mac)
 
 ```bash
 npm install
 npm run dev      # http://localhost:3000
 ```
 
-Im Dashboard auf **„Demo-Leads laden"** klicken, um direkt loszulegen, oder über
-**„🔌 n8n verbinden"** die Webhook-URL holen.
+Im Dashboard auf **„🔍 Leads finden"** → Branche + Stadt → Suchen. Ohne API-Key
+kommen Demo-Leads; danach **„🔎 Alle anreichern"** für die Chatbot-/Erreichbarkeits-Prüfung.
 
-Produktion:
+## Konfiguration (`.env` anlegen, siehe `.env.example`)
 
-```bash
-npm run build && npm run start
-```
+| Variable | Zweck |
+|---|---|
+| `APP_PASSWORD` | Passwort-Schutz. Gesetzt = nur du kommst rein. Leer = offen (nur lokal sinnvoll). |
+| `GOOGLE_MAPS_API_KEY` | Echte Google-Maps-Leads. Ohne Key → Demo-Modus. |
+| `DATA_DIR` | (optional) Speicherort des JSON-Datastores. |
+| `INGEST_TOKEN` | (optional) Token für den `/api/ingest` Webhook. |
 
-## n8n / Flowise anbinden
+**Google API-Key holen:** [console.cloud.google.com](https://console.cloud.google.com)
+→ Projekt anlegen → **Places API (New)** aktivieren → API-Key erstellen → in `.env` eintragen.
 
-Dein n8n-Workflow scraped die Leads und schickt sie per **HTTP POST** an den
-Ingest-Webhook. Das Dashboard dedupliziert, qualifiziert und scored automatisch.
+## Online stellen (aufs Handy, nur du)
 
-```
-POST /api/ingest
-Content-Type: application/json
+1. Auf **[vercel.com](https://vercel.com)** mit GitHub einloggen.
+2. Repo `dennycherpak2005-svg/-` importieren.
+3. Unter **Environment Variables** setzen: `APP_PASSWORD` (dein Passwort) und
+   optional `GOOGLE_MAPS_API_KEY`.
+4. **Deploy** → du bekommst eine URL wie `dein-dashboard.vercel.app`.
+5. Im Handy-Browser öffnen → Passwort eingeben → fertig. Über „Zum Home-Bildschirm"
+   liegt es wie eine echte App auf dem Handy.
 
-[
-  {
-    "name": "Trattoria Bella Napoli",
-    "source": "google_maps",       // google_maps | instagram | linkedin
-    "industry": "Restaurant",
-    "city": "München",
-    "website": "bella-napoli.de",
-    "email": "info@bella-napoli.de",
-    "phone": "+49 89 1234567"
-  }
-]
-```
-
-Nur `name` ist Pflicht. Body kann ein einzelnes Objekt oder ein Array sein.
-
-**Absichern (optional):** ENV `INGEST_TOKEN` setzen und als Header
-`x-ingest-token` (oder Query `?token=`) mitsenden.
-
-> ⚖️ Hinweis: LinkedIn & Instagram haben Nutzungsbedingungen zum Scraping.
-> Nutze offizielle APIs bzw. zulässige Datenquellen.
+> ℹ️ Auf Vercel liegt der einfache JSON-Speicher in `/tmp` (temporär – ideal zum
+> Testen). Für dauerhaftes Speichern später eine echte DB anbinden (siehe `lib/db.ts`).
 
 ## API-Überblick
 
 | Endpoint | Methode | Zweck |
 |---|---|---|
-| `/api/leads` | GET | Alle Leads (nach Score sortiert) |
-| `/api/leads` | POST | Lead(s) anlegen |
-| `/api/leads/[id]` | PATCH | Lead bearbeiten / Status setzen |
-| `/api/leads/[id]` | DELETE | Lead löschen |
+| `/api/scrape` | POST | Google-Maps-Suche (`{ industry, city }`) |
+| `/api/leads` | GET / POST | Leads lesen / anlegen |
+| `/api/leads/[id]` | PATCH / DELETE | Lead bearbeiten / löschen |
 | `/api/leads/[id]/enrich` | POST | Website analysieren (Chatbot + Erreichbarkeit) |
-| `/api/ingest` | POST | Webhook für n8n/Flowise |
 | `/api/seed` | POST | Demo-Daten laden |
+| `/api/auth/login` · `/logout` | POST | An-/Abmelden |
+| `/api/ingest` | POST | (optional) Webhook für externe Quellen |
 
 ## Scoring-Logik (Kurzfassung)
 
@@ -88,26 +78,14 @@ Nur `name` ist Pflicht. Body kann ein einzelnes Objekt oder ein Array sein.
 | Hat Website | +8 |
 | Passende Zielbranche | +10 |
 
-→ **≥70 = 🔥 Heiß, ≥40 = 🌤 Warm, sonst ❄️ Kalt** (geclamped auf 0–100).
-Zielbranchen sind in `lib/scoring.ts` anpassbar.
+→ **≥70 = 🔥 Heiß, ≥40 = 🌤 Warm, sonst ❄️ Kalt.** Zielbranchen in `lib/scoring.ts` anpassbar.
+
+## Hinweis zum Scraping
+
+Google Maps wird über die **offizielle Places API** abgefragt (sauber & legal).
+Instagram/LinkedIn sind bewusst **nicht** integriert – direktes Scrapen verstößt
+gegen deren Nutzungsbedingungen.
 
 ## Tech-Stack
 
-Next.js 14 (App Router) · React 18 · TypeScript · Tailwind CSS · JSON-Datastore
-(`data/leads.json`, gitignored – bei Bedarf leicht gegen SQLite/Postgres tauschbar).
-
-## Projektstruktur
-
-```
-app/
-  page.tsx                 # Dashboard-Seite
-  api/                     # REST-Endpunkte (leads, ingest, enrich, seed)
-components/                # Dashboard-UI (Tabelle, Filter, Modals, Badges)
-lib/
-  types.ts                 # Datenmodell
-  db.ts                    # JSON-Datastore (serialisierte Schreibzugriffe)
-  service.ts               # Lead-Logik (anlegen, dedupe, update, enrich)
-  scoring.ts               # Lead-Scoring
-  enrich.ts                # Website-Analyse (Chatbot- & Erreichbarkeits-Erkennung)
-  seed.ts                  # Demo-Daten
-```
+Next.js 14 (App Router) · React 18 · TypeScript · Tailwind CSS · JSON-Datastore.

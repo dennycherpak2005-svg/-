@@ -2,7 +2,7 @@
   "name": "lead-dashboard",
   "version": "0.1.0",
   "private": true,
-  "description": "Lead Dashboard für KI-/Chatbot-Automatisierung – scraped Leads aus Google Maps, Instagram & LinkedIn (via n8n) qualifizieren, scoren und abarbeiten.",
+  "description": "Privates Lead Dashboard für KI-/Chatbot-Automatisierung – Leads über Google Maps scrapen, automatisch qualifizieren, scoren und für die Kaltakquise abarbeiten.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

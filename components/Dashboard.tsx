@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Lead, LeadSource, LeadStatus, SOURCE_LABELS, STATUS_LABELS, tierOf } from "@/lib/types";
 import { ChatbotBadge, ScoreBadge, SourceBadge, StatusBadge } from "./badges";
 import LeadFormModal from "./LeadFormModal";
-import IngestPanel from "./IngestPanel";
+import ScrapePanel from "./ScrapePanel";
 
 type SourceFilter = "all" | LeadSource;
 type StatusFilter = "all" | LeadStatus;
@@ -22,7 +22,7 @@ export default function Dashboard() {
   const [noBotOnly, setNoBotOnly] = useState(false);
 
   const [editing, setEditing] = useState<Lead | null | undefined>(undefined);
-  const [showIngest, setShowIngest] = useState(false);
+  const [showScrape, setShowScrape] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/leads", { cache: "no-store" });
@@ -100,6 +100,11 @@ export default function Dashboard() {
     await fetch(`/api/leads/${id}`, { method: "DELETE" });
   }
 
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
+
   return (
     <div className="mx-auto max-w-7xl p-4 sm:p-6">
       {/* Header */}
@@ -113,10 +118,10 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setShowIngest(true)}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            onClick={() => setShowScrape(true)}
+            className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
           >
-            🔌 n8n verbinden
+            🔍 Leads finden
           </button>
           <button
             onClick={enrichAll}
@@ -127,9 +132,16 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => setEditing(null)}
-            className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:bg-brand-600"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             + Lead
+          </button>
+          <button
+            onClick={logout}
+            title="Abmelden"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-50"
+          >
+            ⏻
           </button>
         </div>
       </header>
@@ -197,7 +209,7 @@ export default function Dashboard() {
                 <td colSpan={7} className="px-4 py-12 text-center text-slate-400">
                   {leads.length === 0 ? (
                     <div className="space-y-3">
-                      <p>Noch keine Leads. Verbinde n8n oder lade Beispiel-Daten.</p>
+                      <p>Noch keine Leads. Klick auf „🔍 Leads finden" oder lade Beispiel-Daten.</p>
                       <button
                         onClick={seed}
                         disabled={busy === "seed"}
@@ -292,7 +304,7 @@ export default function Dashboard() {
       {editing !== undefined && (
         <LeadFormModal initial={editing} onClose={() => setEditing(undefined)} onSaved={load} />
       )}
-      {showIngest && <IngestPanel onClose={() => setShowIngest(false)} />}
+      {showScrape && <ScrapePanel onClose={() => setShowScrape(false)} onDone={load} />}
     </div>
   );
 }
