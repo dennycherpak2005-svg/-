@@ -1,361 +1,475 @@
 /* ============================================================
-   dashboard.js – UI-Logik des CRM-Dashboards
+   dashboard.js – Akquise-Cockpit UI
    ============================================================ */
 
 Store.seedIfEmpty();
 
-const $ = (sel, el = document) => el.querySelector(sel);
-const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
+const $  = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 
-const state = {
-  view: "dashboard",
-  search: "",
-  stageFilter: "alle",
-  openLeadId: null,
-};
+const state = { view: "cockpit", search: "", temp: "alle", status: "alle" };
 
 /* ---------- Helpers ---------- */
 function esc(s) {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
-function initials(name) {
-  return (name || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
-}
+function initials(n) { return (n || "?").split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase(); }
 function avatarColor(str) {
-  const colors = ["#4f46e5", "#0891b2", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0d9488"];
-  let h = 0;
-  for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
-  return colors[Math.abs(h) % colors.length];
+  const c = ["#4f46e5", "#0891b2", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#db2777", "#0d9488"];
+  let h = 0; for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  return c[Math.abs(h) % c.length];
 }
+function avatar(n) { return `<span class="avatar" style="background:${avatarColor(n)}">${initials(n)}</span>`; }
 function relTime(ts) {
-  const diff = Date.now() - ts, m = 60000, h = 3600000, d = 86400000;
-  if (diff < m) return "gerade eben";
-  if (diff < h) return Math.floor(diff / m) + " Min.";
-  if (diff < d) return Math.floor(diff / h) + " Std.";
-  if (diff < d * 7) return Math.floor(diff / d) + " Tg.";
-  return new Date(ts).toLocaleDateString("de-DE");
+  if (!ts) return "—";
+  const d = Date.now() - ts, m = 60000, h = 3600000, day = 86400000;
+  const past = d >= 0; const a = Math.abs(d);
+  let v;
+  if (a < m) v = "gerade eben";
+  else if (a < h) v = Math.floor(a / m) + " Min.";
+  else if (a < day) v = Math.floor(a / h) + " Std.";
+  else if (a < day * 30) v = Math.floor(a / day) + " Tg.";
+  else v = new Date(ts).toLocaleDateString("de-DE");
+  if (a < m) return v;
+  return past ? "vor " + v : "in " + v;
 }
-function fmtDate(ts) {
-  return new Date(ts).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" });
-}
+function fmtDate(ts) { return ts ? new Date(ts).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" }) : "—"; }
 function toast(msg) {
-  const t = $("#toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => t.classList.remove("show"), 2200);
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), 2400);
 }
+function tempBadge(id) {
+  const t = Store.tempById(id);
+  return `<span class="temp-badge" style="background:${t.color}1a;color:${t.color}">${t.emoji} ${t.label}</span>`;
+}
+function statusBadge(id) {
+  const s = Store.statusById(id);
+  return `<span class="status-pill" style="background:${s.color}1a;color:${s.color}"><span class="dot" style="background:${s.color}"></span>${s.label}</span>`;
+}
+function followDue(lead) { return lead.nextFollowUp && lead.nextFollowUp <= Date.now() + 12 * 3600000; }
 
-function filteredLeads() {
+function filtered() {
   let leads = Store.getLeads();
-  if (state.stageFilter !== "alle") leads = leads.filter((l) => l.stage === state.stageFilter);
+  if (state.temp !== "alle") leads = leads.filter((l) => l.temperature === state.temp);
+  if (state.status !== "alle") leads = leads.filter((l) => l.status === state.status);
   if (state.search) {
     const q = state.search.toLowerCase();
-    leads = leads.filter((l) =>
-      [l.name, l.email, l.company, l.phone, l.source].join(" ").toLowerCase().includes(q)
-    );
+    leads = leads.filter((l) => [l.name, l.email, l.company, l.phone, l.source, l.position].join(" ").toLowerCase().includes(q));
   }
   return leads;
 }
 
-/* ---------- Status-Pill / Avatar ---------- */
-function stagePill(stageId) {
-  const s = Store.stageById(stageId);
-  return `<span class="status-pill" style="background:${s.color}1a;color:${s.color}">
-    <span class="dot" style="background:${s.color}"></span>${s.label}</span>`;
-}
-function avatar(name) {
-  return `<span class="avatar" style="background:${avatarColor(name)}">${initials(name)}</span>`;
-}
-
 /* ============================================================
-   RENDER: Statistik-Karten
+   Cockpit: Stat-Karten + Listen
    ============================================================ */
 function renderStats() {
   const leads = Store.getLeads();
-  const total = leads.length;
+  const by = (t) => leads.filter((l) => l.temperature === t).length;
   const day = 86400000;
-  const newWeek = leads.filter((l) => Date.now() - l.createdAt < day * 7).length;
-  const won = leads.filter((l) => l.stage === "gewonnen").length;
-  const open = leads.filter((l) => !["gewonnen", "verloren"].includes(l.stage)).length;
-  const closed = leads.filter((l) => ["gewonnen", "verloren"].includes(l.stage)).length;
-  const rate = closed ? Math.round((won / closed) * 100) : 0;
+  const contactedToday = leads.filter((l) => l.lastContact && Date.now() - l.lastContact < day).length;
+  const dueFollow = leads.filter(followDue).length;
+  const kunden = leads.filter((l) => l.status === "kunde").length;
 
   const cards = [
-    { label: "Leads gesamt", value: total, sub: "in der Datenbank", ico: "👥", bg: "var(--primary-soft)", fg: "var(--primary)" },
-    { label: "Neu (7 Tage)", value: newWeek, sub: "frische Anfragen", ico: "✨", bg: "var(--info-soft)", fg: "var(--info)" },
-    { label: "Offen", value: open, sub: "in Bearbeitung", ico: "🔥", bg: "var(--warning-soft)", fg: "var(--warning)" },
-    { label: "Gewonnen", value: won, sub: "abgeschlossen", ico: "🏆", bg: "var(--success-soft)", fg: "var(--success)" },
-    { label: "Conversion", value: rate + "%", sub: "Gewinnquote", ico: "📈", bg: "var(--primary-soft)", fg: "var(--primary)" },
+    { label: "🧊 Kalt", value: by("kalt"), sub: "noch unbearbeitet", bg: "var(--info-soft)", fg: "var(--info)", ico: "🧊" },
+    { label: "🌤️ Warm", value: by("warm"), sub: "im Gespräch", bg: "var(--warning-soft)", fg: "var(--warning)", ico: "🌤️" },
+    { label: "🔥 Heiß", value: by("heiss"), sub: "kurz vorm Abschluss", bg: "var(--danger-soft)", fg: "var(--danger)", ico: "🔥" },
+    { label: "Heute kontaktiert", value: contactedToday, sub: "Mails & Anrufe", bg: "var(--primary-soft)", fg: "var(--primary)", ico: "📨" },
+    { label: "Follow-ups fällig", value: dueFollow, sub: "jetzt dran", bg: "var(--warning-soft)", fg: "var(--warning)", ico: "⏰" },
+    { label: "Kunden", value: kunden, sub: "gewonnen", bg: "var(--success-soft)", fg: "var(--success)", ico: "🏆" },
   ];
-
   $("#stat-cards").innerHTML = cards.map((c) => `
     <div class="stat">
-      <div class="label">
-        <span class="badge-ico" style="background:${c.bg};color:${c.fg}">${c.ico}</span>${c.label}
-      </div>
-      <div class="value">${c.value}</div>
-      <div class="sub">${c.sub}</div>
+      <div class="label"><span class="badge-ico" style="background:${c.bg};color:${c.fg}">${c.ico}</span>${c.label}</div>
+      <div class="value">${c.value}</div><div class="sub">${c.sub}</div>
     </div>`).join("");
 }
 
+function miniRow(l, extra = "") {
+  return `<div class="mini-row" data-id="${l.id}">
+    ${avatar(l.name)}
+    <div class="mini-main">
+      <div class="mini-name">${esc(l.name || "Ohne Namen")}</div>
+      <div class="mini-sub">${esc(l.company || l.email || "—")}</div>
+    </div>
+    ${extra}
+    <div class="mini-actions">
+      <button class="icon-btn" data-act="mail" title="Akquise-Mail">📧</button>
+      <button class="icon-btn" data-act="call" title="Anrufen">📞</button>
+    </div>
+  </div>`;
+}
+function bindMini(container) {
+  $$(".mini-row", container).forEach((row) => {
+    const id = row.dataset.id;
+    row.addEventListener("click", (e) => { if (!e.target.closest("[data-act]")) openLead(id); });
+    $$("[data-act]", row).forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      b.dataset.act === "mail" ? composeMail(id) : callLead(id);
+    }));
+  });
+}
+
+function renderFollowups() {
+  const leads = Store.getLeads().filter((l) => l.nextFollowUp).sort((a, b) => a.nextFollowUp - b.nextFollowUp).slice(0, 6);
+  const c = $("#followups");
+  if (!leads.length) { c.innerHTML = emptyMini("Keine Follow-ups geplant", "🎉"); return; }
+  c.innerHTML = leads.map((l) => miniRow(l, `<span class="due ${followDue(l) ? "overdue" : ""}">${relTime(l.nextFollowUp)}</span>`)).join("");
+  bindMini(c);
+}
+function renderHotlist() {
+  const leads = Store.getLeads().filter((l) => l.temperature === "heiss" && l.status !== "kunde").slice(0, 6);
+  const c = $("#hotlist");
+  if (!leads.length) { c.innerHTML = emptyMini("Noch keine heißen Leads", "🌱"); return; }
+  c.innerHTML = leads.map((l) => miniRow(l, statusBadge(l.status))).join("");
+  bindMini(c);
+}
+function emptyMini(txt, ico) { return `<div class="empty-mini"><span>${ico}</span>${txt}</div>`; }
+
 /* ============================================================
-   RENDER: Tabelle (wiederverwendbar)
+   Arbeitsliste
    ============================================================ */
-function tableHTML(leads) {
-  if (!leads.length) {
-    return `<div class="empty-state">
-      <div class="big">🗒️</div>
-      <h3>Noch keine Leads</h3>
-      <p>Neue Anfragen über das öffentliche Formular landen hier automatisch.</p>
-    </div>`;
-  }
-  const rows = leads.map((l) => `
-    <tr data-id="${l.id}">
-      <td>
-        <div class="cell-flex">
-          ${avatar(l.name)}
-          <div>
-            <div class="lead-name">${esc(l.name || "Ohne Namen")}</div>
-            <div class="lead-sub">${esc(l.email || "—")}</div>
-          </div>
-        </div>
-      </td>
-      <td>${esc(l.company || "—")}</td>
-      <td><span class="src" style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface-2);color:var(--text-soft);font-weight:600">${esc(l.source)}</span></td>
-      <td>${stagePill(l.stage)}</td>
-      <td class="lead-sub">${relTime(l.createdAt)}</td>
-    </tr>`).join("");
-  return `<table>
-    <thead><tr><th>Lead</th><th>Firma</th><th>Quelle</th><th>Status</th><th>Erstellt</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-}
-
-function bindTableRows(container) {
-  $$("tr[data-id]", container).forEach((tr) =>
-    tr.addEventListener("click", () => openLead(tr.dataset.id))
-  );
-}
-
-function renderRecent() {
-  const leads = Store.getLeads().slice(0, 6);
-  const c = $("#recent-table");
-  c.innerHTML = tableHTML(leads);
-  bindTableRows(c);
-}
-
-function renderLeadsTable() {
-  const c = $("#leads-table");
-  c.innerHTML = tableHTML(filteredLeads());
-  bindTableRows(c);
-}
-
-function renderStageFilter() {
+function renderFilters() {
   const leads = Store.getLeads();
-  const chips = [{ id: "alle", label: "Alle", count: leads.length }].concat(
-    Store.STAGES.map((s) => ({ id: s.id, label: s.label, count: leads.filter((l) => l.stage === s.id).length }))
-  );
-  $("#stage-filter").innerHTML = chips.map((c) =>
-    `<button class="chip ${state.stageFilter === c.id ? "active" : ""}" data-stage="${c.id}">${c.label} · ${c.count}</button>`
+  const tempChips = [{ id: "alle", label: "Alle", emoji: "📋" }].concat(Store.TEMPS).map((t) =>
+    `<button class="chip ${state.temp === t.id ? "active" : ""}" data-temp="${t.id}">${t.emoji || ""} ${t.label}${t.id !== "alle" ? " · " + leads.filter((l) => l.temperature === t.id).length : ""}</button>`
   ).join("");
-  $$("#stage-filter .chip").forEach((ch) =>
-    ch.addEventListener("click", () => { state.stageFilter = ch.dataset.stage; renderLeadsTable(); renderStageFilter(); })
-  );
+  $("#temp-filter").innerHTML = tempChips;
+  $$("#temp-filter .chip").forEach((c) => c.addEventListener("click", () => { state.temp = c.dataset.temp; renderWorklist(); renderFilters(); }));
+
+  const statusChips = [{ id: "alle", label: "Alle Status" }].concat(Store.STATUSES).map((s) =>
+    `<button class="chip ${state.status === s.id ? "active" : ""}" data-status="${s.id}">${s.label}</button>`
+  ).join("");
+  $("#status-filter").innerHTML = statusChips;
+  $$("#status-filter .chip").forEach((c) => c.addEventListener("click", () => { state.status = c.dataset.status; renderWorklist(); renderFilters(); }));
 }
 
-/* ============================================================
-   RENDER: Pipeline-Board (Drag & Drop)
-   ============================================================ */
-function renderPipeline() {
-  const leads = filteredLeads();
-  const board = $("#pipeline-board");
-  board.innerHTML = Store.STAGES.map((s) => {
-    const items = leads.filter((l) => l.stage === s.id);
-    const cards = items.length
-      ? items.map((l) => `
-        <div class="card" draggable="true" data-id="${l.id}">
-          <div class="name">${esc(l.name || "Ohne Namen")}</div>
-          <div class="company">${esc(l.company || l.email || "—")}</div>
-          <div class="meta">
-            <span class="src">${esc(l.source)}</span>
-            <span class="date">${relTime(l.createdAt)}</span>
-          </div>
-        </div>`).join("")
-      : `<div class="empty-col">leer</div>`;
-    return `<div class="column" data-stage="${s.id}">
-      <h3><span class="dot" style="background:${s.color}"></span>${s.label}<span class="count">${items.length}</span></h3>
-      ${cards}
-    </div>`;
-  }).join("");
+function renderWorklist() {
+  const leads = filtered();
+  const c = $("#worklist");
+  if (!leads.length) {
+    c.innerHTML = `<div class="empty-state"><div class="big">🗒️</div><h3>Keine Leads</h3><p>Importiere Leads oder lege manuell welche an.</p></div>`;
+    return;
+  }
+  c.innerHTML = leads.map((l) => `
+    <div class="work-row ${followDue(l) ? "due-row" : ""}" data-id="${l.id}">
+      ${avatar(l.name)}
+      <div class="work-main">
+        <div class="work-name">${esc(l.name || "Ohne Namen")} ${l.position ? `<span class="work-pos">· ${esc(l.position)}</span>` : ""}</div>
+        <div class="work-sub">${esc(l.company || "—")} · <span class="muted">${esc(l.source)}</span></div>
+      </div>
+      <div class="work-badges">${tempBadge(l.temperature)} ${statusBadge(l.status)}</div>
+      <div class="work-contact">
+        <div class="muted small">Letzter Kontakt</div>
+        <div>${relTime(l.lastContact)}</div>
+      </div>
+      <div class="work-actions">
+        <button class="btn btn-sm" data-act="mail" ${l.email ? "" : "disabled title='Keine E-Mail'"}>📧 Mail</button>
+        <button class="btn btn-sm" data-act="call" ${l.phone ? "" : "disabled title='Keine Nummer'"}>📞 Call</button>
+        <button class="btn btn-sm" data-act="open">›</button>
+      </div>
+    </div>`).join("");
 
-  // Klick öffnet Detail
-  $$(".card", board).forEach((card) => {
-    card.addEventListener("click", () => openLead(card.dataset.id));
-    card.addEventListener("dragstart", (e) => {
-      card.classList.add("dragging");
-      e.dataTransfer.setData("text/plain", card.dataset.id);
-    });
-    card.addEventListener("dragend", () => card.classList.remove("dragging"));
-  });
-
-  $$(".column", board).forEach((col) => {
-    col.addEventListener("dragover", (e) => { e.preventDefault(); col.classList.add("drag-over"); });
-    col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
-    col.addEventListener("drop", (e) => {
-      e.preventDefault();
-      col.classList.remove("drag-over");
-      const id = e.dataTransfer.getData("text/plain");
-      const lead = Store.getLead(id);
-      if (lead && lead.stage !== col.dataset.stage) {
-        Store.setStage(id, col.dataset.stage);
-        toast(`„${lead.name}" → ${Store.stageById(col.dataset.stage).label}`);
-        renderAll();
-      }
-    });
+  $$(".work-row", c).forEach((row) => {
+    const id = row.dataset.id;
+    row.addEventListener("click", (e) => { if (!e.target.closest("[data-act]")) openLead(id); });
+    $$("[data-act]", row).forEach((b) => b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (b.dataset.act === "mail") composeMail(id);
+      else if (b.dataset.act === "call") callLead(id);
+      else openLead(id);
+    }));
   });
 }
 
 /* ============================================================
-   Lead Detail / Edit Modal
+   Mail verfassen (mailto + Vorlage + Logging)
    ============================================================ */
-function openLead(id) {
+function composeMail(id) {
   const lead = Store.getLead(id);
   if (!lead) return;
-  state.openLeadId = id;
-  const s = Store.stageById(lead.stage);
-  const notes = (lead.notes || []).slice().reverse();
+  if (!lead.email) { toast("Dieser Lead hat keine E-Mail-Adresse"); return; }
+  const tpls = Store.getTemplates();
+  const first = tpls[0];
 
   $("#modal").innerHTML = `
     <div class="modal-head">
       ${avatar(lead.name)}
-      <div>
-        <div style="font-size:18px;font-weight:700">${esc(lead.name || "Ohne Namen")}</div>
-        <div style="color:var(--text-soft);font-size:13px">${esc(lead.company || "—")}</div>
-      </div>
+      <div><div class="mh-title">📧 Akquise-Mail</div><div class="mh-sub">an ${esc(lead.email)}</div></div>
       <button class="x" id="modal-close">&times;</button>
     </div>
     <div class="modal-body">
       <div class="field">
-        <label>Status in der Pipeline</label>
-        <select id="d-stage">
-          ${Store.STAGES.map((st) => `<option value="${st.id}" ${st.id === lead.stage ? "selected" : ""}>${st.label}</option>`).join("")}
+        <label>Vorlage</label>
+        <select id="m-tpl">
+          <option value="">— ohne Vorlage —</option>
+          ${tpls.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}
         </select>
       </div>
+      <div class="field"><label>Betreff</label><input id="m-subject" /></div>
+      <div class="field"><label>Nachricht</label><textarea id="m-body" style="min-height:200px"></textarea></div>
+      <p class="muted small">Beim Öffnen wird dein Mailprogramm mit diesem Text gestartet und der Kontakt automatisch als „kontaktiert" protokolliert.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="m-cancel">Abbrechen</button>
+      <button class="btn btn-primary" id="m-send" style="margin-left:auto">📧 In Mailprogramm öffnen</button>
+    </div>`;
+  openOverlay();
 
+  const apply = (tpl) => {
+    $("#m-subject").value = tpl ? fillTemplate(tpl.subject, lead) : "";
+    $("#m-body").value = tpl ? fillTemplate(tpl.body, lead) : "";
+  };
+  apply(first);
+  $("#m-tpl").value = first ? first.id : "";
+  $("#m-tpl").onchange = (e) => apply(tpls.find((t) => t.id === e.target.value));
+  $("#modal-close").onclick = $("#m-cancel").onclick = closeModal;
+  $("#m-send").onclick = () => {
+    const subject = $("#m-subject").value, body = $("#m-body").value;
+    const url = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+    Store.logActivity(id, { type: "mail", text: subject, status: lead.status === "offen" ? "kontaktiert" : lead.status });
+    toast("Mail geöffnet & protokolliert 📧");
+    closeModal(); renderAll();
+  };
+}
+
+/* ============================================================
+   Anrufen (tel: + Ergebnis loggen)
+   ============================================================ */
+function callLead(id) {
+  const lead = Store.getLead(id);
+  if (!lead) return;
+  if (!lead.phone) { toast("Dieser Lead hat keine Nummer"); return; }
+
+  const outcomes = [
+    { key: "erreicht",   label: "✅ Erreicht",        status: "geantwortet", temp: "warm" },
+    { key: "termin",     label: "📅 Termin vereinbart", status: "termin",      temp: "heiss" },
+    { key: "mailbox",    label: "📭 Mailbox",          status: "kontaktiert", temp: null },
+    { key: "nicht",      label: "📵 Nicht erreicht",   status: "kontaktiert", temp: null },
+    { key: "kein",       label: "🚫 Kein Interesse",   status: "abgelehnt",   temp: "kalt" },
+  ];
+
+  $("#modal").innerHTML = `
+    <div class="modal-head">
+      ${avatar(lead.name)}
+      <div><div class="mh-title">📞 Anruf</div><div class="mh-sub">${esc(lead.company || "")}</div></div>
+      <button class="x" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <a class="call-number" href="tel:${esc(lead.phone.replace(/\s/g, ""))}">📞 ${esc(lead.phone)}</a>
+      <p class="muted" style="text-align:center;margin:6px 0 18px">Tippen zum Wählen, danach Ergebnis festhalten:</p>
+      <div class="outcome-grid">
+        ${outcomes.map((o) => `<button class="btn outcome-btn" data-key="${o.key}">${o.label}</button>`).join("")}
+      </div>
+      <div class="field" style="margin-top:18px"><label>Notiz (optional)</label><input id="call-note" placeholder="z. B. Rückruf nächste Woche" /></div>
+      <div class="field"><label>Nächstes Follow-up</label>
+        <select id="call-follow">
+          <option value="">— keins —</option>
+          <option value="1">morgen</option>
+          <option value="3">in 3 Tagen</option>
+          <option value="7" selected>in 1 Woche</option>
+          <option value="14">in 2 Wochen</option>
+        </select>
+      </div>
+    </div>`;
+  openOverlay();
+  $("#modal-close").onclick = closeModal;
+  $$(".outcome-btn").forEach((b) => b.addEventListener("click", () => {
+    const o = outcomes.find((x) => x.key === b.dataset.key);
+    const note = $("#call-note").value.trim();
+    const days = $("#call-follow").value;
+    Store.logActivity(id, {
+      type: "call", outcome: o.label, text: note,
+      status: o.status, temperature: o.temp || undefined,
+      nextFollowUp: days ? Date.now() + Number(days) * 86400000 : undefined,
+    });
+    toast(`Anruf protokolliert: ${o.label}`);
+    closeModal(); renderAll();
+  }));
+}
+
+/* ============================================================
+   Lead-Detail
+   ============================================================ */
+function openLead(id) {
+  const lead = Store.getLead(id);
+  if (!lead) return;
+  const acts = (lead.activities || []).slice().reverse();
+  const actIco = { mail: "📧", call: "📞", note: "📝", status: "🔄" };
+
+  $("#modal").innerHTML = `
+    <div class="modal-head">
+      ${avatar(lead.name)}
+      <div><div class="mh-title">${esc(lead.name || "Ohne Namen")}</div><div class="mh-sub">${esc(lead.company || "—")}${lead.position ? " · " + esc(lead.position) : ""}</div></div>
+      <button class="x" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="quick-actions">
+        <button class="btn btn-primary" id="d-mail" ${lead.email ? "" : "disabled"}>📧 Mail</button>
+        <button class="btn btn-primary" id="d-call" ${lead.phone ? "" : "disabled"}>📞 Anrufen</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Temperatur</label><select id="d-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === lead.temperature ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
+        <div class="field"><label>Status</label><select id="d-status">${Store.STATUSES.map((s) => `<option value="${s.id}" ${s.id === lead.status ? "selected" : ""}>${s.label}</option>`).join("")}</select></div>
+      </div>
       <div class="detail-grid">
         <div class="detail-item"><div class="k">📧 E-Mail</div><div class="v">${lead.email ? `<a href="mailto:${esc(lead.email)}">${esc(lead.email)}</a>` : "—"}</div></div>
-        <div class="detail-item"><div class="k">📞 Telefon</div><div class="v">${lead.phone ? `<a href="tel:${esc(lead.phone)}">${esc(lead.phone)}</a>` : "—"}</div></div>
-        <div class="detail-item"><div class="k">🏢 Firma</div><div class="v">${esc(lead.company || "—")}</div></div>
-        <div class="detail-item"><div class="k">💰 Budget</div><div class="v">${esc(lead.budget || "—")}</div></div>
+        <div class="detail-item"><div class="k">📞 Telefon</div><div class="v">${lead.phone ? `<a href="tel:${esc(lead.phone.replace(/\s/g, ""))}">${esc(lead.phone)}</a>` : "—"}</div></div>
         <div class="detail-item"><div class="k">🌐 Quelle</div><div class="v">${esc(lead.source)}</div></div>
-        <div class="detail-item"><div class="k">📅 Erstellt</div><div class="v">${fmtDate(lead.createdAt)}</div></div>
+        <div class="detail-item"><div class="k">📍 Ort</div><div class="v">${esc(lead.location || "—")}</div></div>
+        <div class="detail-item"><div class="k">⏰ Nächstes Follow-up</div><div class="v">${lead.nextFollowUp ? fmtDate(lead.nextFollowUp) + ` (${relTime(lead.nextFollowUp)})` : "—"}</div></div>
+        <div class="detail-item"><div class="k">📨 Letzter Kontakt</div><div class="v">${relTime(lead.lastContact)}</div></div>
       </div>
-
       <div class="notes">
-        <h4>📝 Notizen & Verlauf</h4>
-        <div id="notes-list">
-          ${notes.length ? notes.map((n) => `
-            <div class="note">
-              ${n.kind === "anfrage" ? "💬 <b>Anfrage:</b> " : ""}${esc(n.text)}
-              <div class="when">${fmtDate(n.at)} · ${relTime(n.at)}</div>
-            </div>`).join("") : `<div style="color:var(--text-soft);font-size:13px">Noch keine Notizen.</div>`}
-        </div>
-        <div class="note-add">
-          <input id="note-input" type="text" placeholder="Notiz hinzufügen und Enter drücken…" />
-          <button class="btn btn-sm" id="note-add-btn">Hinzufügen</button>
-        </div>
+        <h4>🗒️ Verlauf</h4>
+        <div>${acts.length ? acts.map((a) => `<div class="note"><b>${actIco[a.type] || "•"} ${a.outcome || ({mail:"Mail gesendet",call:"Anruf",note:"Notiz",status:"Status"}[a.type] || "")}</b>${a.text ? " – " + esc(a.text) : ""}<div class="when">${fmtDate(a.at)} · ${relTime(a.at)}</div></div>`).join("") : `<div class="muted small">Noch keine Aktivität.</div>`}</div>
+        <div class="note-add"><input id="note-input" placeholder="Notiz hinzufügen + Enter…" /><button class="btn btn-sm" id="note-add-btn">+</button></div>
       </div>
     </div>
     <div class="modal-foot">
       <button class="btn" id="d-edit">✏️ Bearbeiten</button>
       <button class="btn btn-danger" id="d-delete" style="margin-left:auto">🗑 Löschen</button>
     </div>`;
-
-  $("#overlay").classList.add("open");
+  openOverlay();
 
   $("#modal-close").onclick = closeModal;
-  $("#d-stage").onchange = (e) => { Store.setStage(id, e.target.value); toast("Status aktualisiert"); renderAll(); };
+  $("#d-mail").onclick = () => composeMail(id);
+  $("#d-call").onclick = () => callLead(id);
+  $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); renderBackground(); };
+  $("#d-status").onchange = (e) => { Store.setStatus(id, e.target.value); toast("Status aktualisiert"); renderBackground(); };
   $("#d-edit").onclick = () => editLead(id);
-  $("#d-delete").onclick = () => {
-    if (confirm(`„${lead.name}" wirklich löschen?`)) { Store.deleteLead(id); closeModal(); toast("Lead gelöscht"); renderAll(); }
-  };
-  const addNote = () => {
-    const v = $("#note-input").value.trim();
-    if (!v) return;
-    Store.addNote(id, v);
-    openLead(id); // neu rendern
-    toast("Notiz gespeichert");
-  };
+  $("#d-delete").onclick = () => { if (confirm(`„${lead.name}" löschen?`)) { Store.deleteLead(id); closeModal(); toast("Gelöscht"); renderAll(); } };
+  const addNote = () => { const v = $("#note-input").value.trim(); if (!v) return; Store.logActivity(id, { type: "note", text: v }); openLead(id); toast("Notiz gespeichert"); renderBackground(); };
   $("#note-add-btn").onclick = addNote;
   $("#note-input").addEventListener("keydown", (e) => { if (e.key === "Enter") addNote(); });
 }
 
-function closeModal() {
-  $("#overlay").classList.remove("open");
-  state.openLeadId = null;
-}
-
-/* ---------- Lead-Formular (neu / bearbeiten) ---------- */
+/* ---------- Lead Formular (neu/bearbeiten) ---------- */
 function leadForm(lead) {
   const v = (k) => esc(lead?.[k] || "");
   return `
-    <div class="modal-head">
-      <div style="font-size:18px;font-weight:700">${lead ? "✏️ Lead bearbeiten" : "＋ Neuer Lead"}</div>
-      <button class="x" id="modal-close">&times;</button>
-    </div>
+    <div class="modal-head"><div class="mh-title">${lead ? "✏️ Lead bearbeiten" : "＋ Neuer Lead"}</div><button class="x" id="modal-close">&times;</button></div>
     <div class="modal-body">
       <div class="row2">
         <div class="field"><label>Name *</label><input id="f-name" value="${v("name")}" placeholder="Max Mustermann" /></div>
+        <div class="field"><label>Position</label><input id="f-position" value="${v("position")}" placeholder="Geschäftsführer" /></div>
+      </div>
+      <div class="row2">
         <div class="field"><label>Firma</label><input id="f-company" value="${v("company")}" placeholder="Muster GmbH" /></div>
+        <div class="field"><label>Ort</label><input id="f-location" value="${v("location")}" placeholder="Berlin" /></div>
       </div>
       <div class="row2">
         <div class="field"><label>E-Mail</label><input id="f-email" value="${v("email")}" placeholder="max@firma.de" /></div>
         <div class="field"><label>Telefon</label><input id="f-phone" value="${v("phone")}" placeholder="+49 …" /></div>
       </div>
       <div class="row2">
-        <div class="field"><label>Quelle</label><input id="f-source" value="${esc(lead?.source || "Manuell")}" placeholder="z. B. Webformular" /></div>
-        <div class="field"><label>Budget</label><input id="f-budget" value="${v("budget")}" placeholder="z. B. 5.000 €" /></div>
+        <div class="field"><label>Quelle</label><input id="f-source" value="${esc(lead?.source || "Manuell")}" /></div>
+        <div class="field"><label>Temperatur</label><select id="f-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === (lead?.temperature || "kalt") ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
       </div>
-      <div class="field"><label>Status</label>
-        <select id="f-stage">
-          ${Store.STAGES.map((st) => `<option value="${st.id}" ${st.id === (lead?.stage || "neu") ? "selected" : ""}>${st.label}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field"><label>Nachricht / Notiz</label><textarea id="f-message" placeholder="Worum geht es?">${v("message")}</textarea></div>
+      <div class="field"><label>Notiz</label><textarea id="f-message" placeholder="Infos zum Lead…">${lead ? "" : ""}</textarea></div>
     </div>
-    <div class="modal-foot">
-      <button class="btn" id="f-cancel">Abbrechen</button>
-      <button class="btn btn-primary" id="f-save" style="margin-left:auto">${lead ? "Speichern" : "Lead anlegen"}</button>
-    </div>`;
+    <div class="modal-foot"><button class="btn" id="f-cancel">Abbrechen</button><button class="btn btn-primary" id="f-save" style="margin-left:auto">${lead ? "Speichern" : "Anlegen"}</button></div>`;
 }
-
-function newLead() {
-  $("#modal").innerHTML = leadForm(null);
-  $("#overlay").classList.add("open");
-  wireForm(null);
-}
-function editLead(id) {
-  const lead = Store.getLead(id);
-  $("#modal").innerHTML = leadForm(lead);
-  $("#overlay").classList.add("open");
-  wireForm(id);
-}
+function newLead() { $("#modal").innerHTML = leadForm(null); openOverlay(); wireForm(null); }
+function editLead(id) { $("#modal").innerHTML = leadForm(Store.getLead(id)); openOverlay(); wireForm(id); }
 function wireForm(id) {
-  $("#modal-close").onclick = closeModal;
-  $("#f-cancel").onclick = closeModal;
+  $("#modal-close").onclick = $("#f-cancel").onclick = closeModal;
   $("#f-save").onclick = () => {
     const data = {
-      name: $("#f-name").value, company: $("#f-company").value,
-      email: $("#f-email").value, phone: $("#f-phone").value,
-      source: $("#f-source").value || "Manuell", budget: $("#f-budget").value,
-      stage: $("#f-stage").value, message: $("#f-message").value,
+      name: $("#f-name").value, position: $("#f-position").value, company: $("#f-company").value,
+      location: $("#f-location").value, email: $("#f-email").value, phone: $("#f-phone").value,
+      source: $("#f-source").value || "Manuell", temperature: $("#f-temp").value,
     };
     if (!data.name.trim()) { toast("Bitte einen Namen eingeben"); return; }
-    if (id) { Store.updateLead(id, data); toast("Lead gespeichert"); }
-    else { Store.addLead(data); toast("Neuer Lead angelegt ✨"); }
-    closeModal();
-    renderAll();
+    if (id) Store.updateLead(id, data);
+    else { data.message = $("#f-message").value; Store.addLead(data); }
+    toast(id ? "Gespeichert" : "Lead angelegt ✨");
+    closeModal(); renderAll();
+  };
+}
+
+/* ============================================================
+   Import
+   ============================================================ */
+const EMAIL_RE = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+const PHONE_RE = /(\+?\d[\d\s/().-]{6,}\d)/;
+
+function parseImport(text) {
+  const leads = [];
+  text.split(/\r?\n/).forEach((line) => {
+    line = line.trim();
+    if (!line) return;
+    const parts = line.split(/[,;\t]| {2,}/).map((p) => p.trim()).filter(Boolean);
+    const lead = { name: "", email: "", phone: "", company: "" };
+    const rest = [];
+    parts.forEach((p) => {
+      if (!lead.email && EMAIL_RE.test(p)) lead.email = p.match(EMAIL_RE)[0];
+      else if (!lead.phone && PHONE_RE.test(p) && (p.match(/\d/g) || []).length >= 6) lead.phone = p;
+      else rest.push(p);
+    });
+    lead.name = rest[0] || (lead.email ? lead.email.split("@")[0] : "Unbekannt");
+    lead.company = rest[1] || "";
+    if (rest[2]) lead.location = rest[2];
+    if (lead.email || lead.phone || rest.length) leads.push(lead);
+  });
+  return leads;
+}
+
+function updateImportPreview() {
+  const leads = parseImport($("#import-text").value);
+  $("#import-preview").textContent = leads.length ? `${leads.length} Lead(s) erkannt` : "Noch nichts erkannt";
+}
+function doImport() {
+  const temp = $("#import-temp").value;
+  const leads = parseImport($("#import-text").value).map((l) => ({ ...l, temperature: temp, source: "Import" }));
+  if (!leads.length) { toast("Keine Leads erkannt"); return; }
+  const res = Store.importLeads(leads);
+  toast(`${res.added} importiert${res.skipped ? `, ${res.skipped} Duplikate übersprungen` : ""} ✅`);
+  $("#import-text").value = ""; updateImportPreview();
+  renderAll(); switchView("worklist");
+}
+
+/* ============================================================
+   Vorlagen
+   ============================================================ */
+function renderTemplates() {
+  const tpls = Store.getTemplates();
+  const c = $("#template-list");
+  if (!tpls.length) { c.innerHTML = `<div class="empty-state"><div class="big">✉️</div><h3>Keine Vorlagen</h3></div>`; return; }
+  c.innerHTML = tpls.map((t) => `
+    <div class="tpl-card">
+      <div class="tpl-main">
+        <div class="tpl-name">${esc(t.name)}</div>
+        <div class="tpl-subject">${esc(t.subject)}</div>
+        <div class="tpl-body">${esc(t.body).slice(0, 160)}${t.body.length > 160 ? "…" : ""}</div>
+      </div>
+      <div class="tpl-actions">
+        <button class="btn btn-sm" data-edit="${t.id}">✏️</button>
+        <button class="btn btn-sm btn-danger" data-del="${t.id}">🗑</button>
+      </div>
+    </div>`).join("");
+  $$("[data-edit]", c).forEach((b) => b.addEventListener("click", () => editTemplate(b.dataset.edit)));
+  $$("[data-del]", c).forEach((b) => b.addEventListener("click", () => { if (confirm("Vorlage löschen?")) { Store.deleteTemplate(b.dataset.del); renderTemplates(); toast("Gelöscht"); } }));
+}
+function editTemplate(id) {
+  const t = id ? Store.getTemplates().find((x) => x.id === id) : null;
+  $("#modal").innerHTML = `
+    <div class="modal-head"><div class="mh-title">${t ? "Vorlage bearbeiten" : "Neue Vorlage"}</div><button class="x" id="modal-close">&times;</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Name</label><input id="t-name" value="${esc(t?.name || "")}" placeholder="z. B. Kalt-Akquise" /></div>
+      <div class="field"><label>Betreff</label><input id="t-subject" value="${esc(t?.subject || "")}" placeholder="Kurze Frage zu {{firma}}" /></div>
+      <div class="field"><label>Nachricht</label><textarea id="t-body" style="min-height:200px" placeholder="Hallo {{vorname}}, …">${esc(t?.body || "")}</textarea></div>
+      <p class="muted small">Platzhalter: {{vorname}} {{name}} {{firma}} {{position}} {{ort}}</p>
+    </div>
+    <div class="modal-foot"><button class="btn" id="t-cancel">Abbrechen</button><button class="btn btn-primary" id="t-save" style="margin-left:auto">Speichern</button></div>`;
+  openOverlay();
+  $("#modal-close").onclick = $("#t-cancel").onclick = closeModal;
+  $("#t-save").onclick = () => {
+    const name = $("#t-name").value.trim();
+    if (!name) { toast("Bitte einen Namen eingeben"); return; }
+    Store.saveTemplate({ id: t?.id, name, subject: $("#t-subject").value, body: $("#t-body").value });
+    toast("Vorlage gespeichert"); closeModal(); renderTemplates();
   };
 }
 
@@ -364,27 +478,28 @@ function wireForm(id) {
    ============================================================ */
 function exportCSV() {
   const leads = Store.getLeads();
-  if (!leads.length) { toast("Keine Leads zum Exportieren"); return; }
-  const cols = ["name", "company", "email", "phone", "source", "stage", "budget", "createdAt"];
-  const head = ["Name", "Firma", "E-Mail", "Telefon", "Quelle", "Status", "Budget", "Erstellt"];
-  const escCsv = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
-  const rows = leads.map((l) =>
-    cols.map((c) => escCsv(c === "createdAt" ? fmtDate(l.createdAt) : c === "stage" ? Store.stageById(l.stage).label : l[c])).join(",")
-  );
-  const csv = "﻿" + [head.map(escCsv).join(","), ...rows].join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  if (!leads.length) { toast("Keine Leads"); return; }
+  const cols = ["name", "company", "position", "email", "phone", "source", "temperature", "status", "createdAt"];
+  const head = ["Name", "Firma", "Position", "E-Mail", "Telefon", "Quelle", "Temperatur", "Status", "Erstellt"];
+  const e = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  const rows = leads.map((l) => cols.map((c) =>
+    e(c === "createdAt" ? fmtDate(l.createdAt) : c === "temperature" ? Store.tempById(l.temperature).label : c === "status" ? Store.statusById(l.status).label : l[c])
+  ).join(","));
+  const csv = "﻿" + [head.map(e).join(","), ...rows].join("\n");
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
   a.download = `leads_${new Date().toISOString().slice(0, 10)}.csv`;
   a.click();
   toast("CSV exportiert ⬇︎");
 }
 
 /* ============================================================
-   Navigation & Render-Orchestrierung
+   Modal / Navigation
    ============================================================ */
-const TITLES = { dashboard: "Dashboard", pipeline: "Pipeline", leads: "Alle Leads" };
+function openOverlay() { $("#overlay").classList.add("open"); }
+function closeModal() { $("#overlay").classList.remove("open"); }
 
+const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", import: "Leads importieren", templates: "Mail-Vorlagen" };
 function switchView(view) {
   state.view = view;
   $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
@@ -393,32 +508,38 @@ function switchView(view) {
   renderAll();
 }
 
+/** Alles neu rendern (inkl. aktive Listen). */
 function renderAll() {
-  renderStats();
-  renderRecent();
-  renderStageFilter();
-  renderLeadsTable();
-  renderPipeline();
+  renderStats(); renderFollowups(); renderHotlist();
+  renderFilters(); renderWorklist();
+  renderTemplates();
 }
+/** Hintergrund-Render ohne offenes Modal zu schließen. */
+function renderBackground() { renderStats(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
 
-/* ---------- Event-Wiring ---------- */
+/* ---------- Wiring ---------- */
 $$(".nav-item").forEach((n) => n.addEventListener("click", () => switchView(n.dataset.view)));
 $("#btn-new-lead").onclick = newLead;
 $("#btn-export").onclick = exportCSV;
-$("#btn-export-2").onclick = exportCSV;
+$("#btn-new-template").onclick = () => editTemplate(null);
+$("#btn-import").onclick = doImport;
+$("#import-text").addEventListener("input", updateImportPreview);
+$("#btn-paste-example").onclick = () => {
+  $("#import-text").value = "Anna Schmidt, anna.schmidt@beispiel-gmbh.de, +49 151 11122233, Beispiel GmbH, Hamburg\nJonas Krüger; jonas@krueger-tech.de; +49 170 44455566; Krüger Tech; München\nMaria Lopez\tmaria@lopez-studio.de\t+49 160 99988877\tLopez Studio\tKöln";
+  updateImportPreview();
+};
+$("#csv-file").addEventListener("change", (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => { $("#import-text").value = String(reader.result || "").replace(/^[^\n]*name[^\n]*email[^\n]*\n/i, ""); updateImportPreview(); switchView("import"); };
+  reader.readAsText(file);
+});
 $("#overlay").addEventListener("click", (e) => { if (e.target.id === "overlay") closeModal(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
-
 $("#global-search").addEventListener("input", (e) => {
-  state.search = e.target.value;
-  renderLeadsTable();
-  renderPipeline();
-  if (state.search && state.view === "dashboard") switchView("leads");
+  state.search = e.target.value; renderWorklist();
+  if (state.search && state.view !== "worklist") switchView("worklist");
 });
-
-// Live-Update, wenn das öffentliche Formular in einem anderen Tab einen Lead anlegt
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
-window.addEventListener("leadcrm:changed", () => {});
 
-// los geht's
 renderAll();

@@ -3,79 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lead CRM · Dashboard</title>
+  <title>Akquise-Cockpit</title>
   <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 </head>
 <body>
   <div class="app">
-    <!-- Sidebar -->
     <aside class="sidebar">
-      <div class="brand">
-        <span class="logo">📈</span> Lead&nbsp;CRM
-      </div>
-      <a class="nav-item active" data-view="dashboard"><span class="ico">📊</span> Dashboard</a>
-      <a class="nav-item" data-view="pipeline"><span class="ico">🗂️</span> Pipeline</a>
-      <a class="nav-item" data-view="leads"><span class="ico">👥</span> Alle Leads</a>
+      <div class="brand"><span class="logo">🎯</span> Akquise</div>
+      <a class="nav-item active" data-view="cockpit"><span class="ico">📊</span> Cockpit</a>
+      <a class="nav-item" data-view="worklist"><span class="ico">🎯</span> Arbeitsliste</a>
+      <a class="nav-item" data-view="import"><span class="ico">📥</span> Leads importieren</a>
+      <a class="nav-item" data-view="templates"><span class="ico">✉️</span> Mail-Vorlagen</a>
       <div class="spacer"></div>
       <a class="form-link" href="formular.html" target="_blank">
-        🌐 Öffentliches Lead-Formular<br /><b>formular.html öffnen →</b>
+        🌐 Eingangs-Formular<br /><b>für warme Inbound-Leads →</b>
       </a>
     </aside>
 
-    <!-- Main -->
     <div class="main">
       <header class="topbar">
-        <h1 id="view-title">Dashboard</h1>
+        <h1 id="view-title">Cockpit</h1>
         <div class="search">
           <span class="ico">🔍</span>
-          <input id="global-search" type="text" placeholder="Leads durchsuchen…" />
+          <input id="global-search" type="text" placeholder="Lead suchen…" />
         </div>
-        <button class="btn btn-primary" id="btn-new-lead">＋ Neuer Lead</button>
+        <button class="btn btn-primary" id="btn-new-lead">＋ Lead</button>
       </header>
 
       <main class="content">
-        <!-- ===== Dashboard ===== -->
-        <section class="view active" id="view-dashboard">
+        <!-- ===== Cockpit ===== -->
+        <section class="view active" id="view-cockpit">
           <div class="stats" id="stat-cards"></div>
-          <div class="panel">
-            <div class="panel-head">
-              <h2>🆕 Neueste Leads</h2>
-              <div class="right">
-                <button class="btn btn-sm" id="btn-export">⬇︎ CSV-Export</button>
-              </div>
+          <div class="cockpit-grid">
+            <div class="panel">
+              <div class="panel-head"><h2>⏰ Follow-ups fällig</h2></div>
+              <div id="followups"></div>
             </div>
-            <div id="recent-table"></div>
+            <div class="panel">
+              <div class="panel-head"><h2>🔥 Heiße Leads</h2></div>
+              <div id="hotlist"></div>
+            </div>
           </div>
         </section>
 
-        <!-- ===== Pipeline ===== -->
-        <section class="view" id="view-pipeline">
-          <div class="pipeline" id="pipeline-board"></div>
-        </section>
-
-        <!-- ===== Alle Leads ===== -->
-        <section class="view" id="view-leads">
+        <!-- ===== Arbeitsliste ===== -->
+        <section class="view" id="view-worklist">
           <div class="panel">
             <div class="panel-head">
-              <h2>Alle Leads</h2>
-              <div class="right">
-                <button class="btn btn-sm" id="btn-export-2">⬇︎ CSV-Export</button>
+              <h2>🎯 Arbeitsliste</h2>
+              <div class="right"><button class="btn btn-sm" id="btn-export">⬇︎ CSV</button></div>
+            </div>
+            <div class="filter-bar">
+              <div class="filter-group" id="temp-filter"></div>
+              <div class="filter-group" id="status-filter"></div>
+            </div>
+            <div id="worklist"></div>
+          </div>
+        </section>
+
+        <!-- ===== Import ===== -->
+        <section class="view" id="view-import">
+          <div class="panel">
+            <div class="panel-head"><h2>📥 Leads importieren</h2></div>
+            <div class="import-body">
+              <p class="muted">Füge eine Liste ein (eine Zeile pro Lead) oder lade eine CSV-Datei. Spalten dürfen durch Komma, Semikolon oder Tab getrennt sein – E-Mail und Telefon werden automatisch erkannt.</p>
+              <div class="import-actions">
+                <label class="btn btn-sm">📄 CSV-Datei wählen<input type="file" id="csv-file" accept=".csv,text/csv,text/plain" hidden /></label>
+                <button class="btn btn-sm" id="btn-paste-example">Beispiel einfügen</button>
+                <span class="muted" id="default-temp-wrap">Temperatur für Import:
+                  <select id="import-temp">
+                    <option value="kalt" selected>🧊 Kalt</option>
+                    <option value="warm">🌤️ Warm</option>
+                    <option value="heiss">🔥 Heiß</option>
+                  </select>
+                </span>
+              </div>
+              <textarea id="import-text" class="import-text" placeholder="Max Mustermann, max@firma.de, +49 151 1234567, Muster GmbH&#10;Erika Beispiel; erika@beispiel.de; +49 170 7654321; Beispiel AG"></textarea>
+              <div class="import-foot">
+                <div id="import-preview" class="muted"></div>
+                <button class="btn btn-primary" id="btn-import" style="margin-left:auto">Leads übernehmen</button>
               </div>
             </div>
-            <div class="filter-chips" id="stage-filter"></div>
-            <div id="leads-table"></div>
+          </div>
+        </section>
+
+        <!-- ===== Vorlagen ===== -->
+        <section class="view" id="view-templates">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>✉️ Mail-Vorlagen</h2>
+              <div class="right"><button class="btn btn-sm btn-primary" id="btn-new-template">＋ Vorlage</button></div>
+            </div>
+            <div class="tpl-hint muted">Platzhalter: <code>{{vorname}}</code> · <code>{{name}}</code> · <code>{{firma}}</code> · <code>{{position}}</code> · <code>{{ort}}</code></div>
+            <div id="template-list"></div>
           </div>
         </section>
       </main>
     </div>
   </div>
 
-  <!-- ===== Lead Detail / Edit Modal ===== -->
-  <div class="overlay" id="overlay">
-    <div class="modal" id="modal"></div>
-  </div>
-
+  <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
   <div class="toast" id="toast"></div>
 
   <script src="js/store.js"></script>

@@ -114,7 +114,8 @@
       e.preventDefault();
       const fd = new FormData(form);
       const lead = Object.fromEntries(fd.entries());
-      Store.addLead({ ...lead, stage: "neu", source: lead.source || "Webformular" });
+      // Inbound-Anfragen sind automatisch „warm" – sie kommen aktiv auf uns zu.
+      Store.addLead({ ...lead, temperature: "warm", status: "geantwortet", source: lead.source || "Webformular" });
       form.style.display = "none";
       success.classList.add("show");
       form.reset();

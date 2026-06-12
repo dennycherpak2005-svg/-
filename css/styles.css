@@ -219,3 +219,87 @@ tbody tr:last-child td { border-bottom: none; }
   .row2, .detail-grid { grid-template-columns: 1fr; }
   .topbar .search { width: auto; flex: 1; }
 }
+
+/* ============================================================
+   Akquise-Cockpit – zusätzliche Komponenten
+   ============================================================ */
+.muted { color: var(--text-soft); }
+.small { font-size: 12px; }
+code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-size: 12px; }
+
+/* Stat-Karten kompakter im 6er-Raster */
+.stats { grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); }
+
+/* Cockpit-Grid */
+.cockpit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .cockpit-grid { grid-template-columns: 1fr; } }
+
+/* Mini-Rows (Cockpit-Listen) */
+.mini-row { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.mini-row:last-child { border-bottom: none; }
+.mini-row:hover { background: var(--surface-2); }
+.mini-main { min-width: 0; flex: 1; }
+.mini-name { font-weight: 600; font-size: 14px; }
+.mini-sub { font-size: 12px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mini-actions { display: flex; gap: 4px; }
+.icon-btn { width: 32px; height: 32px; border: 1px solid var(--border); background: var(--surface); border-radius: 9px; cursor: pointer; font-size: 14px; }
+.icon-btn:hover { background: var(--surface-2); }
+.due { font-size: 12px; font-weight: 600; color: var(--text-soft); white-space: nowrap; }
+.due.overdue { color: var(--danger); }
+.empty-mini { padding: 28px 20px; text-align: center; color: var(--text-soft); font-size: 14px; }
+.empty-mini span { display: block; font-size: 30px; margin-bottom: 6px; }
+
+/* Temperatur-Badge */
+.temp-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+/* Filter-Bar */
+.filter-bar { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+.filter-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* Arbeitsliste */
+.work-row { display: grid; grid-template-columns: auto 1.6fr 1.4fr 1fr auto; align-items: center; gap: 14px; padding: 14px 20px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .1s; }
+.work-row:last-child { border-bottom: none; }
+.work-row:hover { background: var(--surface-2); }
+.work-row.due-row { box-shadow: inset 3px 0 0 var(--warning); }
+.work-main { min-width: 0; }
+.work-name { font-weight: 600; font-size: 14px; }
+.work-pos { color: var(--text-soft); font-weight: 400; font-size: 13px; }
+.work-sub { font-size: 12px; color: var(--text-soft); }
+.work-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+.work-contact { font-size: 13px; }
+.work-actions { display: flex; gap: 6px; }
+.work-actions .btn[disabled] { opacity: .4; cursor: not-allowed; }
+@media (max-width: 760px) {
+  .work-row { grid-template-columns: auto 1fr; row-gap: 8px; }
+  .work-badges, .work-contact, .work-actions { grid-column: 1 / -1; }
+}
+
+/* Import */
+.import-body { padding: 20px; }
+.import-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+.import-actions select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; }
+.import-text { width: 100%; min-height: 200px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; resize: vertical; }
+.import-foot { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+
+/* Vorlagen */
+.tpl-hint { padding: 12px 20px; border-bottom: 1px solid var(--border); }
+.tpl-card { display: flex; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.tpl-card:last-child { border-bottom: none; }
+.tpl-main { flex: 1; min-width: 0; }
+.tpl-name { font-weight: 700; font-size: 14px; }
+.tpl-subject { font-size: 13px; color: var(--primary); margin: 2px 0 6px; }
+.tpl-body { font-size: 13px; color: var(--text-soft); white-space: pre-wrap; }
+.tpl-actions { display: flex; gap: 6px; align-items: flex-start; }
+
+/* Modal-Köpfe */
+.mh-title { font-size: 18px; font-weight: 700; }
+.mh-sub { font-size: 13px; color: var(--text-soft); }
+
+/* Quick-Actions im Detail */
+.quick-actions { display: flex; gap: 10px; margin-bottom: 18px; }
+.quick-actions .btn { flex: 1; justify-content: center; }
+
+/* Call-Modal */
+.call-number { display: block; text-align: center; font-size: 26px; font-weight: 800; color: var(--primary); text-decoration: none; padding: 16px; background: var(--primary-soft); border-radius: 14px; }
+.outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.outcome-btn { justify-content: center; }

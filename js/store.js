@@ -1,82 +1,87 @@
 /* ============================================================
-   store.js – gemeinsame Datenschicht (localStorage)
-   Wird vom Dashboard UND vom öffentlichen Formular genutzt.
+   store.js – Datenschicht des Akquise-Cockpits (localStorage)
    ============================================================ */
 
-const STORE_KEY = "leadcrm.v1";
+const STORE_KEY = "leadcrm.v2";
 
-/** Pipeline-Stufen – Reihenfolge bestimmt die Spalten im Board. */
-const STAGES = [
-  { id: "neu",          label: "Neu",          color: "#0891b2" },
-  { id: "kontaktiert",  label: "Kontaktiert",  color: "#4f46e5" },
-  { id: "qualifiziert", label: "Qualifiziert", color: "#7c3aed" },
-  { id: "angebot",      label: "Angebot",      color: "#d97706" },
-  { id: "gewonnen",     label: "Gewonnen",     color: "#16a34a" },
-  { id: "verloren",     label: "Verloren",     color: "#dc2626" },
+/** Lead-Temperatur – die Hauptachse für Akquise. */
+const TEMPS = [
+  { id: "kalt",  label: "Kalt",  color: "#0891b2", emoji: "🧊" },
+  { id: "warm",  label: "Warm",  color: "#d97706", emoji: "🌤️" },
+  { id: "heiss", label: "Heiß",  color: "#dc2626", emoji: "🔥" },
 ];
 
-const stageById = (id) => STAGES.find((s) => s.id === id) || STAGES[0];
+/** Outreach-Status (Akquise-Trichter). */
+const STATUSES = [
+  { id: "offen",       label: "Offen",         color: "#64748b" },
+  { id: "kontaktiert", label: "Kontaktiert",   color: "#4f46e5" },
+  { id: "geantwortet", label: "Geantwortet",   color: "#0891b2" },
+  { id: "termin",      label: "Termin",        color: "#7c3aed" },
+  { id: "kunde",       label: "Kunde",         color: "#16a34a" },
+  { id: "abgelehnt",   label: "Kein Interesse",color: "#dc2626" },
+];
 
-/* ---------- Low-level Persistenz ---------- */
+const tempById   = (id) => TEMPS.find((t) => t.id === id) || TEMPS[0];
+const statusById = (id) => STATUSES.find((s) => s.id === id) || STATUSES[0];
+
+/* ---------- Persistenz ---------- */
 function readAll() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (!raw) return { leads: [] };
+    if (!raw) return { leads: [], templates: [] };
     const data = JSON.parse(raw);
     if (!Array.isArray(data.leads)) data.leads = [];
+    if (!Array.isArray(data.templates)) data.templates = [];
     return data;
   } catch (e) {
-    console.error("Konnte Daten nicht lesen:", e);
-    return { leads: [] };
+    console.error("Lesefehler:", e);
+    return { leads: [], templates: [] };
   }
 }
-
 function writeAll(data) {
   localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  // andere Tabs / Seiten benachrichtigen
   try { window.dispatchEvent(new Event("leadcrm:changed")); } catch (_) {}
 }
-
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-/* ---------- Öffentliche API ---------- */
+/* ---------- API ---------- */
 const Store = {
-  STAGES,
-  stageById,
+  TEMPS, STATUSES, tempById, statusById,
 
   getLeads() {
     return readAll().leads.sort((a, b) => b.createdAt - a.createdAt);
   },
+  getLead(id) { return readAll().leads.find((l) => l.id === id) || null; },
 
-  getLead(id) {
-    return readAll().leads.find((l) => l.id === id) || null;
-  },
-
-  /** Neuen Lead anlegen (vom Formular oder manuell). */
   addLead(input) {
     const data = readAll();
-    const lead = {
-      id: uid(),
-      name: (input.name || "").trim(),
-      email: (input.email || "").trim(),
-      phone: (input.phone || "").trim(),
-      company: (input.company || "").trim(),
-      message: (input.message || "").trim(),
-      budget: (input.budget || "").trim(),
-      source: input.source || "Webformular",
-      stage: input.stage || "neu",
-      notes: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    if (input.message) {
-      lead.notes.push({ id: uid(), text: input.message, at: Date.now(), kind: "anfrage" });
-    }
+    const lead = normalizeLead(input);
     data.leads.push(lead);
     writeAll(data);
     return lead;
+  },
+
+  /** Mehrere Leads importieren – dedupliziert über E-Mail + Telefon. */
+  importLeads(list) {
+    const data = readAll();
+    const seen = new Set(
+      data.leads.flatMap((l) => [l.email && l.email.toLowerCase(), l.phone && l.phone.replace(/\s/g, "")].filter(Boolean))
+    );
+    let added = 0, skipped = 0;
+    list.forEach((input) => {
+      const key1 = (input.email || "").toLowerCase();
+      const key2 = (input.phone || "").replace(/\s/g, "");
+      if ((key1 && seen.has(key1)) || (key2 && seen.has(key2))) { skipped++; return; }
+      const lead = normalizeLead(input);
+      data.leads.push(lead);
+      if (key1) seen.add(key1);
+      if (key2) seen.add(key2);
+      added++;
+    });
+    writeAll(data);
+    return { added, skipped };
   },
 
   updateLead(id, patch) {
@@ -87,17 +92,21 @@ const Store = {
     writeAll(data);
     return lead;
   },
+  setTemperature(id, t) { return this.updateLead(id, { temperature: t }); },
+  setStatus(id, s) { return this.updateLead(id, { status: s }); },
+  setFollowUp(id, ts) { return this.updateLead(id, { nextFollowUp: ts }); },
 
-  setStage(id, stage) {
-    return this.updateLead(id, { stage });
-  },
-
-  addNote(id, text) {
+  /** Aktivität protokollieren (Mail, Anruf, Notiz, Status). */
+  logActivity(id, act) {
     const data = readAll();
     const lead = data.leads.find((l) => l.id === id);
     if (!lead) return null;
-    lead.notes = lead.notes || [];
-    lead.notes.push({ id: uid(), text: text.trim(), at: Date.now(), kind: "note" });
+    lead.activities = lead.activities || [];
+    lead.activities.push({ id: uid(), type: act.type, text: act.text || "", outcome: act.outcome || "", at: Date.now() });
+    if (act.type === "mail" || act.type === "call") lead.lastContact = Date.now();
+    if (act.status) lead.status = act.status;
+    if (act.temperature) lead.temperature = act.temperature;
+    if (act.nextFollowUp !== undefined) lead.nextFollowUp = act.nextFollowUp;
     lead.updatedAt = Date.now();
     writeAll(data);
     return lead;
@@ -109,20 +118,89 @@ const Store = {
     writeAll(data);
   },
 
-  /** Hilfsfunktion: Beispieldaten beim allerersten Start. */
+  /* ---------- Mail-Vorlagen ---------- */
+  getTemplates() { return readAll().templates; },
+  saveTemplate(tpl) {
+    const data = readAll();
+    if (tpl.id) {
+      const t = data.templates.find((x) => x.id === tpl.id);
+      if (t) Object.assign(t, tpl);
+    } else {
+      tpl.id = uid();
+      data.templates.push(tpl);
+    }
+    writeAll(data);
+    return tpl;
+  },
+  deleteTemplate(id) {
+    const data = readAll();
+    data.templates = data.templates.filter((t) => t.id !== id);
+    writeAll(data);
+  },
+
+  /* ---------- Erststart: Demo-Daten ---------- */
   seedIfEmpty() {
     const data = readAll();
-    if (data.leads.length > 0) return;
-    const now = Date.now();
-    const day = 86400000;
+    if (data.leads.length || data.templates.length) return;
+    const now = Date.now(), day = 86400000;
+    const demoTemplates = [
+      {
+        name: "Kalt – kurze Vorstellung",
+        subject: "Kurze Frage zu {{firma}}",
+        body: "Hallo {{vorname}},\n\nich bin auf {{firma}} gestoßen und glaube, wir können euch helfen, [Nutzen in einem Satz].\n\nHättest du diese Woche 15 Minuten für ein kurzes Gespräch?\n\nViele Grüße\n[Dein Name]",
+      },
+      {
+        name: "Follow-up",
+        subject: "Nachfrage: {{firma}}",
+        body: "Hallo {{vorname}},\n\nich wollte kurz nachhaken, ob meine letzte Nachricht bei dir angekommen ist.\n\nPasst ein kurzer Call diese oder nächste Woche?\n\nBeste Grüße\n[Dein Name]",
+      },
+    ];
+    demoTemplates.forEach((t) => this.saveTemplate(t));
+
     const demo = [
-      { name: "Lena Hoffmann", email: "lena.hoffmann@brightlabs.de", phone: "+49 151 2345678", company: "BrightLabs GmbH", source: "Webformular", stage: "neu", budget: "5.000 €", message: "Interessiert an eurem Premium-Paket, bitte um Rückruf.", createdAt: now - day * 0.2 },
-      { name: "Tomáš Novák", email: "t.novak@nordwind.io", phone: "+420 777 112 233", company: "Nordwind s.r.o.", source: "Empfehlung", stage: "kontaktiert", budget: "12.000 €", message: "Wir suchen eine Lösung für 20 Mitarbeiter.", createdAt: now - day * 1.5 },
-      { name: "Sarah Klein", email: "sarah@klein-design.de", phone: "+49 170 9988776", company: "Klein Design", source: "LinkedIn", stage: "qualifiziert", budget: "8.500 €", message: "Demo-Termin gewünscht.", createdAt: now - day * 3 },
-      { name: "Mehmet Yıldız", email: "myildiz@atlasbau.de", phone: "+49 160 4455667", company: "Atlas Bau AG", source: "Webformular", stage: "angebot", budget: "22.000 €", message: "Angebot für Jahreslizenz erhalten, prüft intern.", createdAt: now - day * 5 },
-      { name: "Julia Fischer", email: "j.fischer@greenstep.eco", phone: "+49 152 3344556", company: "GreenStep", source: "Messe", stage: "gewonnen", budget: "15.000 €", message: "Vertrag unterschrieben! 🎉", createdAt: now - day * 8 },
-      { name: "Paul Berger", email: "paul.berger@gmx.de", phone: "+49 176 1122334", company: "", source: "Webformular", stage: "verloren", budget: "2.000 €", message: "Budget passt aktuell nicht.", createdAt: now - day * 10 },
+      { name: "Lena Hoffmann", email: "lena@brightlabs.de", phone: "+49 151 2345678", company: "BrightLabs GmbH", position: "Marketing", source: "Google Maps", temperature: "heiss", status: "termin", nextFollowUp: now + day, createdAt: now - day * 1 },
+      { name: "Tomáš Novák", email: "t.novak@nordwind.io", phone: "+420 777 112233", company: "Nordwind s.r.o.", position: "CEO", source: "LinkedIn", temperature: "warm", status: "kontaktiert", nextFollowUp: now - day * 0.5, createdAt: now - day * 2 },
+      { name: "Sarah Klein", email: "sarah@klein-design.de", phone: "+49 170 9988776", company: "Klein Design", position: "Inhaberin", source: "Branchenbuch", temperature: "warm", status: "geantwortet", createdAt: now - day * 3 },
+      { name: "Mehmet Yıldız", email: "m.yildiz@atlasbau.de", phone: "+49 160 4455667", company: "Atlas Bau AG", position: "Einkauf", source: "Import", temperature: "kalt", status: "offen", createdAt: now - day * 4 },
+      { name: "Julia Fischer", email: "j.fischer@greenstep.eco", phone: "+49 152 3344556", company: "GreenStep", position: "Gründerin", source: "Messe", temperature: "heiss", status: "kunde", createdAt: now - day * 6 },
+      { name: "Paul Berger", email: "paul.berger@gmx.de", phone: "+49 176 1122334", company: "Berger Consulting", position: "", source: "Google Maps", temperature: "kalt", status: "offen", createdAt: now - day * 7 },
+      { name: "Anna Weber", email: "anna@weber-immo.de", phone: "+49 171 5566778", company: "Weber Immobilien", position: "Geschäftsführerin", source: "Import", temperature: "kalt", status: "offen", createdAt: now - day * 8 },
     ];
     demo.forEach((d) => this.addLead(d));
   },
 };
+
+/* ---------- Hilfen ---------- */
+function normalizeLead(input) {
+  return {
+    id: uid(),
+    name: (input.name || "").trim(),
+    email: (input.email || "").trim(),
+    phone: (input.phone || "").trim(),
+    company: (input.company || "").trim(),
+    position: (input.position || "").trim(),
+    website: (input.website || "").trim(),
+    location: (input.location || "").trim(),
+    source: (input.source || "Manuell").trim(),
+    temperature: input.temperature || "kalt",
+    status: input.status || "offen",
+    activities: input.message ? [{ id: uid(), type: "note", text: input.message, outcome: "", at: Date.now() }] : [],
+    lastContact: input.lastContact || null,
+    nextFollowUp: input.nextFollowUp || null,
+    createdAt: input.createdAt || Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+/** Vorname aus vollem Namen. */
+function firstName(name) { return (name || "").trim().split(/\s+/)[0] || ""; }
+
+/** Platzhalter in Vorlagen ersetzen. */
+function fillTemplate(text, lead) {
+  return String(text || "")
+    .replace(/\{\{\s*name\s*\}\}/gi, lead.name || "")
+    .replace(/\{\{\s*vorname\s*\}\}/gi, firstName(lead.name))
+    .replace(/\{\{\s*firma\s*\}\}/gi, lead.company || "")
+    .replace(/\{\{\s*position\s*\}\}/gi, lead.position || "")
+    .replace(/\{\{\s*ort\s*\}\}/gi, lead.location || "");
+}
