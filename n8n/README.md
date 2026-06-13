@@ -6,8 +6,26 @@ Automatisierter Workflow für den Beruf **„Schreibkraft (m/w/d) Datenerfassung
 Webshop einpflegen** – nur eben automatisiert.
 
 ## 📂 Dateien
+- `schreibkraft-datenerfassung-demo.json` → **Sofort-Demo: nur n8n + Claude** (kein Google, kein Discogs). Zum schnellen Ausprobieren.
 - `schreibkraft-datenerfassung.json` → Basis-Workflow (Regel-basiert, ohne KI).
 - `schreibkraft-datenerfassung-ki-agent.json` → **KI-Agent-Version** (Claude Opus 4.8 + Discogs), erfasst Artikel **und schreibt die Werbeanzeige** – genau die Aufgabe aus der Indeed-Anzeige.
+
+---
+
+## ▶️ Sofort-Demo (nur n8n + Claude)
+
+Datei: `schreibkraft-datenerfassung-demo.json`
+
+Schnellster Weg zum Testen – ohne externe Dienste:
+1. Import → im Node *Claude Opus 4.8* deine **Anthropic-Credentials** wählen.
+2. Workflow **aktivieren**.
+3. Test-Request:
+   ```bash
+   curl -X POST https://DEINE-N8N-URL/webhook/datenerfassung-demo \
+     -H "Content-Type: application/json" \
+     -d '{ "eingabe": "miles davis kind of blue lp columbia vg+ 1959, ca 25 euro" }'
+   ```
+   Antwort: strukturierter Artikel + Werbeanzeige als JSON.
 
 ---
 

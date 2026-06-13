@@ -1,0 +1,164 @@
+{
+  "name": "Schreibkraft Datenerfassung – Demo (nur n8n + Claude)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "datenerfassung-demo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1111111-1111-4111-8111-d00000000001",
+      "name": "📥 Eingang (Text/EAN)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        320
+      ],
+      "webhookId": "datenerfassung-demo-vinyl"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Erfasse folgenden Artikel für einen Vinyl-/CD-Webshop. Eingabe:\n\n{{ $json.body.eingabe || $json.body.text || $json.body.ean }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Du bist die digitale Schreibkraft für Datenerfassung bei einem Vinyl- & CD-Händler.\n\nAufgabe (wie in der Stellenbeschreibung):\n1. ERFASSEN: Erzeuge aus der Eingabe einen sauberen, strukturierten Artikel-Datensatz für eine Schallplatte oder CD. Erfinde keine Fakten – wenn ein Feld unklar ist, lass es leer und setze 'pruefen_noetig' auf true.\n2. WERBEANZEIGE: Schreibe eine ansprechende deutsche Produktbeschreibung (2–4 Sätze) UND eine kurze Werbeanzeige (max. 1 Satz, max. 90 Zeichen).\n\nNormalisiere 'format' zu genau einem von: 'Vinyl LP', 'Vinyl Single', 'CD'. Normalisiere 'zustand' nach Goldmine-Grading (Mint, Near Mint, Very Good Plus, Very Good, Good) oder 'Neu/OVP'. 'preis' ist eine Zahl in Euro.\n\nAntworte ausschließlich im vorgegebenen JSON-Format."
+        }
+      },
+      "id": "b2222222-2222-4222-8222-d00000000002",
+      "name": "🤖 KI-Agent (Claude)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -360,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "model": "claude-opus-4-8",
+        "options": {
+          "maxTokensToSample": 1200
+        }
+      },
+      "id": "c3333333-3333-4333-8333-d00000000003",
+      "name": "Claude Opus 4.8",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -440,
+        540
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "ANTHROPIC_CRED",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"kuenstler\": \"Miles Davis\",\n  \"titel\": \"Kind of Blue\",\n  \"format\": \"Vinyl LP\",\n  \"zustand\": \"Very Good Plus\",\n  \"label\": \"Columbia\",\n  \"jahr\": \"1959\",\n  \"ean\": \"5099749197121\",\n  \"preis\": 24.90,\n  \"bestand\": 1,\n  \"beschreibung\": \"Jazz-Meilenstein als 180g-Pressung, klanglich brillant und in top Zustand.\",\n  \"werbeanzeige\": \"Jazz-Klassiker 'Kind of Blue' auf Vinyl – jetzt im Shop!\",\n  \"pruefen_noetig\": false\n}"
+      },
+      "id": "e5555555-5555-4555-8555-d00000000005",
+      "name": "Struktur (JSON)",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"ok\", \"artikel\": $json.output } }}",
+        "options": {}
+      },
+      "id": "f6666666-6666-4666-8666-d00000000006",
+      "name": "✔️ Antwort (JSON)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ▶️ Sofort-Demo: nur n8n + Claude\n\nKein Google, kein Discogs nötig.\n\n1. Importieren\n2. Anthropic-Credential im Node *Claude Opus 4.8* wählen\n3. Workflow **aktivieren**\n4. Test-Request schicken (siehe unten) – Ergebnis kommt als JSON zurück.\n\n```\ncurl -X POST https://DEINE-N8N-URL/webhook/datenerfassung-demo \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"eingabe\": \"miles davis kind of blue lp columbia vg+ 1959, ca 25 euro\" }'\n```\n\n💡 Tipp: Zum schnellen Klick-Test im Editor 'Test workflow' nutzen und im Webhook-Node Beispieldaten setzen.",
+        "height": 360,
+        "width": 420,
+        "color": 5
+      },
+      "id": "28888888-8888-4888-8888-d00000000008",
+      "name": "ℹ️ So testen",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        -80
+      ]
+    }
+  ],
+  "connections": {
+    "📥 Eingang (Text/EAN)": {
+      "main": [
+        [
+          {
+            "node": "🤖 KI-Agent (Claude)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 KI-Agent (Claude)": {
+      "main": [
+        [
+          {
+            "node": "✔️ Antwort (JSON)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Opus 4.8": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 KI-Agent (Claude)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Struktur (JSON)": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "🤖 KI-Agent (Claude)",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Datenerfassung"
+    },
+    {
+      "name": "Demo"
+    }
+  ]
+}
