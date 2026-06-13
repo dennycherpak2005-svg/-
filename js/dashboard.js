@@ -605,9 +605,10 @@ function initN8n() {
     const url = $("#n8n-url").value.trim();
     if (!url) { toast("Bitte erst die Webhook-URL eintragen"); return; }
     const c = n8nConfig(); c.url = url; n8nSave(c);
-    const res = await postN8n(url, { test: true, name: "Test Lead", email: "test@example.com", company: "Beispiel GmbH" });
-    n8nLog(res.ok ? `🧪 Test gesendet (${res.status})` : `🧪 Test fehlgeschlagen: ${res.status}`);
-    toast(res.ok ? "Test gesendet – check dein n8n 🧪" : "Test fehlgeschlagen");
+    const to = (prompt("Test-Mail an welche Adresse?\n\nLeer lassen = nur die Verbindung testen (es wird KEINE Mail verschickt).\nEigene E-Mail eintragen = echte Test-Mail an dich selbst.", "") || "").trim();
+    const res = await postN8n(url, { test: true, name: "Test Lead", company: "Test GmbH", email: to, source: "CRM-Test" });
+    n8nLog(res.ok ? `🧪 Test ${to ? "an " + to : "(nur Verbindung)"} ausgelöst (${res.status})` : `🧪 Test fehlgeschlagen: ${res.status}`);
+    toast(res.ok ? (to ? "Test-Mail ausgelöst 🧪" : "Verbindung getestet ✅") : "Test fehlgeschlagen");
   };
   $("#btn-n8n-bulk").onclick = () => {
     const list = filtered().filter((l) => l.email);
