@@ -11,6 +11,7 @@ Akquise-Mail rausschicken oder anrufen, Ergebnisse protokollieren und Follow-ups
 - **🧊 Kalt / 🌤️ Warm / 🔥 Heiß** – Lead-Temperatur als Hauptachse, auf einen Blick
 - **📊 Cockpit** – Kennzahlen (Temperatur-Verteilung, heute kontaktiert, fällige Follow-ups, Kunden) + Listen „Follow-ups fällig" & „Heiße Leads"
 - **🎯 Arbeitsliste** – alle Leads zum Durchackern, Filter nach Temperatur & Status, Suche
+- **🔍 Lead-Finder (Auto-Scraper)** – Branche + Stadt eingeben → zieht automatisch Firmen (Name, Telefon, Webseite, Adresse) aus **OpenStreetMap** (kostenlos, kein API-Key). **Auto-Modus** holt im Hintergrund laufend neue Leads aus gespeicherten Suchen
 - **📧 Akquise-Mail per Klick** – öffnet dein Mailprogramm mit vorausgefülltem Text (Vorlagen mit Platzhaltern), Kontakt wird automatisch protokolliert
 - **📞 Klick-to-Call** – wählt direkt, danach Ergebnis loggen (erreicht / Termin / Mailbox / nicht erreicht / kein Interesse) inkl. automatischem Follow-up
 - **📥 Lead-Import** – CSV-Datei oder einfach Liste reinkopieren; E-Mail & Telefon werden automatisch erkannt, Duplikate übersprungen
@@ -39,7 +40,26 @@ formular.html     Öffentliches Eingangs-Formular für warme Inbound-Leads
 css/styles.css    Styling
 js/store.js       Datenschicht (localStorage): Leads, Aktivitäten, Vorlagen
 js/dashboard.js   UI-Logik des Cockpits
+js/finder.js      Lead-Finder / Auto-Scraper (OpenStreetMap: Nominatim + Overpass)
 ```
+
+## 🔍 Lead-Finder / Auto-Scraper
+
+Holt Firmen automatisch aus **OpenStreetMap** – kostenlos und ohne API-Key:
+
+1. Links **🔍 Lead-Finder** öffnen
+2. **Branche** (z. B. Friseur) und **Stadt** (z. B. Köln) wählen → **„Firmen suchen"**
+3. Treffer prüfen (die mit Telefon sind vorausgewählt) → **„Alle übernehmen"**
+4. **Auto-Modus:** Suche per **„＋ Zur Auto-Suche"** speichern, Schalter auf **AN** →
+   das Tool holt im gewählten Intervall laufend neue Firmen in den Hintergrund.
+
+> ⚠️ Der Auto-Modus läuft nur, **solange der Browser-Tab geöffnet** ist (reine
+> Browser-Lösung, kein Server). Datenquelle ist OpenStreetMap – Telefon/Webseite
+> sind oft dabei, **E-Mails meist nicht**.
+>
+> ⚖️ **Rechtlicher Hinweis:** Kalte Werbe-E-Mails an Firmen ohne Einwilligung sind
+> in Deutschland grundsätzlich unzulässig (UWG §7); telefonische B2B-Ansprache ist
+> die sicherere Schiene. Gescrapte Personendaten unterliegen der DSGVO.
 
 ## 📥 Import-Format
 

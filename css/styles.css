@@ -303,3 +303,34 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
 .call-number { display: block; text-align: center; font-size: 26px; font-weight: 800; color: var(--primary); text-decoration: none; padding: 16px; background: var(--primary-soft); border-radius: 14px; }
 .outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .outcome-btn { justify-content: center; }
+
+/* ============================================================
+   Lead-Finder (Auto-Scraper)
+   ============================================================ */
+.finder-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 980px) { .finder-grid { grid-template-columns: 1fr; } }
+.finder-body { padding: 20px; }
+.finder-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.fd-h4 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-soft); margin: 18px 0 10px; }
+
+.fd-results-head { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.fd-list { max-height: 420px; overflow: auto; margin-top: 6px; }
+.fd-item { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-bottom: 1px solid var(--border); cursor: pointer; }
+.fd-item:hover { background: var(--surface-2); }
+.fd-item input { width: 17px; height: 17px; accent-color: var(--primary); }
+.fd-item-main { min-width: 0; }
+.fd-item-name { font-weight: 600; font-size: 14px; }
+.fd-item-sub { font-size: 12px; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.fd-queue-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; font-size: 13px; }
+.fd-queue-item span { flex: 1; }
+.fd-log { max-height: 220px; overflow: auto; }
+.fd-log-row { font-size: 13px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
+
+/* Toggle-Switch */
+.switch { position: relative; display: inline-block; width: 46px; height: 26px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; inset: 0; background: #cbd5e1; border-radius: 30px; transition: .2s; cursor: pointer; }
+.slider::before { content: ""; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+.switch input:checked + .slider { background: var(--success); }
+.switch input:checked + .slider::before { transform: translateX(20px); }

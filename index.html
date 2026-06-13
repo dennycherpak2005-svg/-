@@ -13,6 +13,7 @@
       <div class="brand"><span class="logo">🎯</span> Akquise</div>
       <a class="nav-item active" data-view="cockpit"><span class="ico">📊</span> Cockpit</a>
       <a class="nav-item" data-view="worklist"><span class="ico">🎯</span> Arbeitsliste</a>
+      <a class="nav-item" data-view="finder"><span class="ico">🔍</span> Lead-Finder</a>
       <a class="nav-item" data-view="import"><span class="ico">📥</span> Leads importieren</a>
       <a class="nav-item" data-view="templates"><span class="ico">✉️</span> Mail-Vorlagen</a>
       <div class="spacer"></div>
@@ -62,6 +63,51 @@
           </div>
         </section>
 
+        <!-- ===== Lead-Finder (Auto-Scraper) ===== -->
+        <section class="view" id="view-finder">
+          <div class="finder-grid">
+            <div class="panel">
+              <div class="panel-head"><h2>🔍 Lead-Finder</h2><div class="right"><span class="muted small">Quelle: OpenStreetMap · kostenlos</span></div></div>
+              <div class="finder-body">
+                <div class="row2">
+                  <div class="field"><label>Branche</label><select id="fd-branche"></select></div>
+                  <div class="field"><label>Stadt / Ort</label><input id="fd-stadt" placeholder="z. B. Berlin" /></div>
+                </div>
+                <div class="finder-actions">
+                  <button class="btn btn-primary" id="fd-search">🔍 Firmen suchen</button>
+                  <button class="btn" id="fd-queue">＋ Zur Auto-Suche</button>
+                  <span class="muted small" id="fd-status"></span>
+                </div>
+                <div id="fd-results"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h2>🤖 Auto-Modus</h2>
+                <div class="right">
+                  <label class="switch"><input type="checkbox" id="fd-auto" /><span class="slider"></span></label>
+                </div>
+              </div>
+              <div class="finder-body">
+                <div class="field">
+                  <label>Intervall</label>
+                  <select id="fd-interval">
+                    <option value="5">alle 5 Minuten</option>
+                    <option value="10" selected>alle 10 Minuten</option>
+                    <option value="30">alle 30 Minuten</option>
+                    <option value="60">jede Stunde</option>
+                  </select>
+                </div>
+                <p class="muted small">Läuft automatisch durch deine gespeicherten Suchen und holt neue Firmen – <b>solange dieser Tab offen ist</b>.</p>
+                <h4 class="fd-h4">Gespeicherte Suchen</h4>
+                <div id="fd-queue-list"></div>
+                <h4 class="fd-h4">Verlauf</h4>
+                <div id="fd-log" class="fd-log"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== Import ===== -->
         <section class="view" id="view-import">
           <div class="panel">
@@ -108,5 +154,6 @@
 
   <script src="js/store.js"></script>
   <script src="js/dashboard.js"></script>
+  <script src="js/finder.js"></script>
 </body>
 </html>

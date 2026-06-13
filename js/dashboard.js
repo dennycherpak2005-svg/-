@@ -499,7 +499,7 @@ function exportCSV() {
 function openOverlay() { $("#overlay").classList.add("open"); }
 function closeModal() { $("#overlay").classList.remove("open"); }
 
-const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", import: "Leads importieren", templates: "Mail-Vorlagen" };
+const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", finder: "Lead-Finder", import: "Leads importieren", templates: "Mail-Vorlagen" };
 function switchView(view) {
   state.view = view;
   $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
