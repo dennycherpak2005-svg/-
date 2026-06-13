@@ -1,0 +1,265 @@
+{
+  "name": "Schreibkraft Datenerfassung – Vinyl & CD",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "datenerfassung",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a1111111-1111-4111-8111-111111111111",
+      "name": "📥 Datenerfassung – Eingang",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        300
+      ],
+      "webhookId": "datenerfassung-vinyl-cd"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================================\n//  Datenerfassung: Roh-Eingaben säubern & strukturieren\n//  Aufgabe der Schreibkraft – hier automatisiert:\n//  - Felder trimmen, Groß-/Kleinschreibung vereinheitlichen\n//  - Preis als Zahl, EAN prüfen, Zustand normalisieren\n//  - Eindeutige Artikelnummer (SKU) erzeugen\n// ============================================================\n\nconst b = $json.body || $json;\n\nconst clean = (v) => (typeof v === 'string' ? v.trim().replace(/\\s+/g, ' ') : v);\nconst titleCase = (v) =>\n  clean(v)\n    ? clean(v)\n        .toLowerCase()\n        .replace(/\\b\\p{L}/gu, (c) => c.toUpperCase())\n    : '';\n\n// Zustand auf Standardwerte mappen (Goldmine-Grading)\nconst zustandMap = {\n  m: 'Mint (M)',\n  nm: 'Near Mint (NM)',\n  'vg+': 'Very Good Plus (VG+)',\n  vg: 'Very Good (VG)',\n  g: 'Good (G)',\n  neu: 'Neu/OVP',\n};\nconst zRaw = (clean(b.zustand) || '').toLowerCase();\nconst zustand = zustandMap[zRaw] || clean(b.zustand) || 'unbekannt';\n\n// Format normalisieren\nconst formatRaw = (clean(b.format) || '').toLowerCase();\nlet format = 'Sonstige';\nif (/lp|vinyl|schallplatte|12/.test(formatRaw)) format = 'Vinyl LP';\nelse if (/single|7\"|45/.test(formatRaw)) format = 'Vinyl Single';\nelse if (/cd/.test(formatRaw)) format = 'CD';\n\n// Preis säubern -> Zahl\nconst preis = Number(\n  String(b.preis ?? '')\n    .replace(/[^0-9,.]/g, '')\n    .replace(/\\.(?=\\d{3})/g, '')\n    .replace(',', '.')\n) || 0;\n\n// EAN/Barcode prüfen (8 oder 13 Stellen)\nconst eanRaw = String(b.ean ?? '').replace(/\\D/g, '');\nconst eanOk = eanRaw.length === 8 || eanRaw.length === 13;\n\nconst kuenstler = titleCase(b.kuenstler || b.artist);\nconst titel = clean(b.titel || b.title);\n\n// SKU: VC-<Format-Kürzel>-<Jahr>-<Zufall>\nconst kuerzel = format.startsWith('Vinyl') ? 'VIN' : format === 'CD' ? 'CD' : 'XX';\nconst sku =\n  'VC-' +\n  kuerzel +\n  '-' +\n  new Date().getFullYear() +\n  '-' +\n  Math.random().toString(36).slice(2, 7).toUpperCase();\n\n// Pflichtfelder prüfen\nconst fehlend = [];\nif (!kuenstler) fehlend.push('Künstler');\nif (!titel) fehlend.push('Titel');\nif (!preis) fehlend.push('Preis');\n\nreturn [\n  {\n    json: {\n      sku,\n      kuenstler,\n      titel,\n      format,\n      zustand,\n      label: clean(b.label) || '',\n      jahr: clean(b.jahr) || '',\n      ean: eanOk ? eanRaw : '',\n      ean_warnung: eanRaw && !eanOk ? 'EAN ungültig (' + eanRaw + ')' : '',\n      preis,\n      bestand: Number(b.bestand) || 1,\n      beschreibung: clean(b.beschreibung) || '',\n      erfasst_von: clean(b.erfasst_von) || 'Schreibkraft',\n      erfasst_am: new Date().toISOString(),\n      gueltig: fehlend.length === 0,\n      fehlende_felder: fehlend,\n    },\n  },\n];"
+      },
+      "id": "b2222222-2222-4222-8222-222222222222",
+      "name": "🧹 Felder normalisieren",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.gueltig }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c3333333-3333-4333-8333-333333333333",
+      "name": "✅ Pflichtfelder vorhanden?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "HIER_GOOGLE_SHEET_ID_EINTRAGEN",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Produktliste",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "SKU": "={{ $json.sku }}",
+            "Künstler": "={{ $json.kuenstler }}",
+            "Titel": "={{ $json.titel }}",
+            "Format": "={{ $json.format }}",
+            "Zustand": "={{ $json.zustand }}",
+            "Label": "={{ $json.label }}",
+            "Jahr": "={{ $json.jahr }}",
+            "EAN": "={{ $json.ean }}",
+            "Preis (€)": "={{ $json.preis }}",
+            "Bestand": "={{ $json.bestand }}",
+            "Beschreibung": "={{ $json.beschreibung }}",
+            "Erfasst von": "={{ $json.erfasst_von }}",
+            "Erfasst am": "={{ $json.erfasst_am }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "d4444444-4444-4444-8444-444444444444",
+      "name": "🗂️ In Produktliste speichern",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        120,
+        180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_CRED",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "team@vinyl-diamonds.de",
+        "subject": "=Neuer Artikel erfasst: {{ $json.kuenstler }} – {{ $json.titel }}",
+        "emailType": "html",
+        "message": "=<h2>🆕 Neuer Artikel in der Produktliste</h2>\n<table cellpadding=\"6\" style=\"border-collapse:collapse\">\n<tr><td><b>SKU</b></td><td>{{ $json.sku }}</td></tr>\n<tr><td><b>Künstler</b></td><td>{{ $json.kuenstler }}</td></tr>\n<tr><td><b>Titel</b></td><td>{{ $json.titel }}</td></tr>\n<tr><td><b>Format</b></td><td>{{ $json.format }}</td></tr>\n<tr><td><b>Zustand</b></td><td>{{ $json.zustand }}</td></tr>\n<tr><td><b>Preis</b></td><td>{{ $json.preis }} €</td></tr>\n<tr><td><b>Bestand</b></td><td>{{ $json.bestand }}</td></tr>\n<tr><td><b>Erfasst von</b></td><td>{{ $json.erfasst_von }}</td></tr>\n</table>\n{{ $json.ean_warnung ? '<p style=\"color:#dc2626\"><b>⚠ ' + $json.ean_warnung + '</b></p>' : '' }}",
+        "options": {}
+      },
+      "id": "e5555555-5555-4555-8555-555555555555",
+      "name": "📧 Bestätigung an Team",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        360,
+        180
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CRED",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"ok\", \"message\": \"Artikel erfasst\", \"sku\": $('🧹 Felder normalisieren').item.json.sku } }}",
+        "options": {
+          "responseCode": 201
+        }
+      },
+      "id": "f6666666-6666-4666-8666-666666666666",
+      "name": "✔️ Antwort: Erfolg",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        600,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"error\", \"message\": \"Pflichtfelder fehlen\", \"fehlende_felder\": $json.fehlende_felder } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "07777777-7777-4777-8777-777777777777",
+      "name": "✖️ Antwort: Fehler",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        120,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📝 Schreibkraft Datenerfassung – Vinyl & CD\n\nAutomatisiert die Tätigkeit der **Schreibkraft (m/w/d) Datenerfassung**:\nArtikeldaten für Schallplatten & CDs erfassen, prüfen und in die\nProduktliste / den Webshop einpflegen.\n\n**Ablauf**\n1. Eingang per Formular/POST (Webhook)\n2. Felder säubern & vereinheitlichen, SKU erzeugen\n3. Pflichtfelder prüfen\n4. Gültig → in Google Sheet speichern + Team-Mail\n5. Ungültig → Fehlermeldung zurück\n\n⚙️ **Vor dem Start einrichten:** Google-Sheet-ID, Google- & Gmail-Credentials.",
+        "height": 300,
+        "width": 360,
+        "color": 4
+      },
+      "id": "18888888-8888-4888-8888-888888888888",
+      "name": "ℹ️ Hinweis",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -680,
+        -60
+      ]
+    }
+  ],
+  "connections": {
+    "📥 Datenerfassung – Eingang": {
+      "main": [
+        [
+          {
+            "node": "🧹 Felder normalisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧹 Felder normalisieren": {
+      "main": [
+        [
+          {
+            "node": "✅ Pflichtfelder vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✅ Pflichtfelder vorhanden?": {
+      "main": [
+        [
+          {
+            "node": "🗂️ In Produktliste speichern",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "✖️ Antwort: Fehler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗂️ In Produktliste speichern": {
+      "main": [
+        [
+          {
+            "node": "📧 Bestätigung an Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📧 Bestätigung an Team": {
+      "main": [
+        [
+          {
+            "node": "✔️ Antwort: Erfolg",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "Datenerfassung"
+    }
+  ]
+}
