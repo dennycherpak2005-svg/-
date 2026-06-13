@@ -418,7 +418,8 @@ $("#global-search").addEventListener("input", (e) => {
 
 // Live-Update, wenn das öffentliche Formular in einem anderen Tab einen Lead anlegt
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
-window.addEventListener("leadcrm:changed", () => {});
+// Live-Update innerhalb desselben Tabs: Store feuert "leadcrm:changed" nach jeder Änderung
+window.addEventListener("leadcrm:changed", () => renderAll());
 
 // los geht's
 renderAll();
