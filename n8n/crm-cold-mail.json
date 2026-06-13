@@ -132,9 +132,9 @@
     {
       "parameters": {
         "sendTo": "={{ $json.Email }}",
-        "subject": "=Kurze Idee für {{ $json.Firma }}",
+        "subject": "=Frage zu {{ $json.Firma }}",
         "emailType": "text",
-        "message": "={{ ($json.Ansprechpartner && $json.Ansprechpartner !== $json.Firma) ? 'Hallo ' + $json.Ansprechpartner : 'Guten Tag' }},\n\nich weiß, Ihr Postfach ist voll — deshalb mache ich es kurz.\n\nViele Betriebe verlieren täglich potenzielle Kunden, weil Anfragen zu spät oder gar nicht beantwortet werden. Nicht weil das Team schlecht ist — sondern weil einfach keine Zeit bleibt.\n\nGenau das löse ich.\n\nIch baue einen digitalen Assistenten, der Ihre Kundenanfragen automatisch beantwortet — rund um die Uhr, auch nachts und am Wochenende. Kein Personal nötig. Kein Aufwand für Sie.\n\nWas Sie bekommen:\n✅ Chatbot komplett fertig eingerichtet\n✅ Passt in wenigen Minuten auf Ihre Website\n✅ Beantwortet Fragen, nimmt Kontaktdaten auf, qualifiziert Interessenten\n✅ Ich kümmere mich um Updates, Anpassungen & Betrieb\n\nPreis:\n🔧 Einmalige Einrichtung: 149€\n🔄 Monatliche Betreuung & Betrieb: 39€/Monat\n\nWarum so günstig? Ich baue gerade meinen Kundenstamm auf und will Ihnen zeigen, was möglich ist — ohne dass Sie ein Risiko eingehen.\n\nHätten Sie kurz 15 Minuten diese Woche?\n\nViele Grüße,\nDenny Cherpak\nDC Marketing & Automation",
+        "message": "={{ ($json.Ansprechpartner && $json.Ansprechpartner !== $json.Firma) ? 'Hallo ' + $json.Ansprechpartner : 'Guten Tag' }},\n\nkurze Frage: Was passiert bei {{ $json.Firma }}, wenn abends oder am Wochenende eine Kundenanfrage reinkommt?\n\nBei vielen Betrieben bleibt sie bis zum nächsten Werktag liegen – und der Interessent ist bis dahin oft schon woanders.\n\nIch richte Betrieben einen kleinen Assistenten für die Website ein, der genau solche Anfragen rund um die Uhr beantwortet und die Kontaktdaten festhält. Fertig eingerichtet, kein Aufwand für Sie.\n\nWäre das für {{ $json.Firma }} einen kurzen Blick wert? Dann schicke ich Ihnen ein 2-Minuten-Beispiel – ganz unverbindlich.\n\nViele Grüße\nDenny Cherpak\nDC Marketing & Automation",
         "options": {
           "appendAttribution": false,
           "senderName": "Denny Cherpak"
