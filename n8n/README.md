@@ -5,7 +5,34 @@ Automatisierter Workflow für den Beruf **„Schreibkraft (m/w/d) Datenerfassung
 **Schallplatten- & CD-Artikel erfassen, prüfen und in die Produktliste / den
 Webshop einpflegen** – nur eben automatisiert.
 
-## 📂 Datei
+## 📂 Dateien
+- `schreibkraft-datenerfassung.json` → Basis-Workflow (Regel-basiert, ohne KI).
+- `schreibkraft-datenerfassung-ki-agent.json` → **KI-Agent-Version** (Claude Opus 4.8 + Discogs), erfasst Artikel **und schreibt die Werbeanzeige** – genau die Aufgabe aus der Indeed-Anzeige.
+
+---
+
+## 🤖 KI-Agent-Version (empfohlen für die Demo)
+
+Datei: `schreibkraft-datenerfassung-ki-agent.json`
+
+Die Anzeige verlangt *„Erstellung und Einbinden von Schallplatten- und CD-[Artikeln] und Werbeanzeigen"*. Diese Version bildet beides ab:
+
+1. 📥 **Eingang** – EAN/Barcode **oder** freier Text per POST.
+2. 🤖 **KI-Agent (Claude Opus 4.8)** – ermittelt einen sauberen Datensatz, verifiziert ihn über das **Discogs-Tool**, schreibt eine **Produktbeschreibung + kurze Werbeanzeige** und gibt strukturiertes JSON zurück. Unsichere Felder werden mit `pruefen_noetig = JA` markiert (Schutz vor Halluzinationen → kurzer Mensch-Check).
+3. 🗂️ **Google Sheet** – speichert inkl. Spalten `Werbeanzeige` und `Prüfen?`.
+
+**Einrichtung:** Import → Credentials für **Anthropic**, **Google Sheets** verbinden, **Discogs-Token** und **Sheet-ID** eintragen.
+
+**Test:**
+```bash
+curl -X POST https://DEINE-N8N-URL/webhook/datenerfassung-ki \
+  -H "Content-Type: application/json" \
+  -d '{ "eingabe": "EAN 5099749197121, Zustand vg+, Preis ca. 25€" }'
+```
+
+---
+
+## 🧱 Basis-Workflow (ohne KI)
 `schreibkraft-datenerfassung.json` → in n8n importierbar.
 
 ## 🔄 Was der Workflow macht
