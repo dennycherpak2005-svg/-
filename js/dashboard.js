@@ -536,6 +536,17 @@ function n8nLog(msg) {
   n8nSave(cfg);
   renderN8nLog();
 }
+function updateN8nState() {
+  const el = $("#n8n-state"); if (!el) return;
+  const cfg = n8nConfig();
+  if (cfg.url) {
+    el.innerHTML = `✅ verbunden${cfg.auto ? " · Auto-Versand an 🤖" : ""}`;
+    el.style.color = "var(--success)";
+  } else {
+    el.textContent = "⚠️ noch keine Webhook-URL eingetragen";
+    el.style.color = "var(--warning)";
+  }
+}
 function renderN8nLog() {
   const el = $("#n8n-log"); if (!el) return;
   const cfg = n8nConfig();
@@ -595,12 +606,14 @@ function initN8n() {
   if ($("#n8n-url")) $("#n8n-url").value = cfg.url || "";
   if ($("#n8n-auto")) $("#n8n-auto").checked = !!cfg.auto;
   renderN8nLog();
+  updateN8nState();
 
   $("#n8n-save").onclick = () => {
     const c = n8nConfig(); c.url = $("#n8n-url").value.trim(); n8nSave(c);
+    updateN8nState();
     toast(c.url ? "Webhook-URL gespeichert ✅" : "URL geleert");
   };
-  $("#n8n-auto").addEventListener("change", (e) => { const c = n8nConfig(); c.auto = e.target.checked; n8nSave(c); toast(e.target.checked ? "Auto-Versand an 🤖" : "Auto-Versand aus"); });
+  $("#n8n-auto").addEventListener("change", (e) => { const c = n8nConfig(); c.auto = e.target.checked; n8nSave(c); updateN8nState(); toast(e.target.checked ? "Auto-Versand an 🤖" : "Auto-Versand aus"); });
   $("#n8n-test").onclick = async () => {
     const url = $("#n8n-url").value.trim();
     if (!url) { toast("Bitte erst die Webhook-URL eintragen"); return; }
