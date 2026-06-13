@@ -517,8 +517,50 @@ function renderAll() {
 /** Hintergrund-Render ohne offenes Modal zu schließen. */
 function renderBackground() { renderStats(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
 
+/* ============================================================
+   Komplett-Backup & Wiederherstellung (alles in einer Datei)
+   ============================================================ */
+function exportBackup() {
+  const backup = {
+    app: "akquise-cockpit",
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    data: JSON.parse(localStorage.getItem(STORE_KEY) || "{}"),          // Leads, Notizen, Vorlagen
+    finder: JSON.parse(localStorage.getItem("leadcrm.finder") || "null"), // gespeicherte Suchen + Auto
+  };
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
+  a.download = `akquise-backup_${new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-")}.json`;
+  a.click();
+  const n = (backup.data.leads || []).length;
+  toast(`Backup gespeichert 💾 (${n} Leads)`);
+}
+
+function restoreBackup(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    let backup;
+    try { backup = JSON.parse(reader.result); }
+    catch { toast("⚠️ Datei ist kein gültiges Backup"); return; }
+    if (!backup || backup.app !== "akquise-cockpit" || !backup.data) {
+      toast("⚠️ Das ist keine Akquise-Backup-Datei"); return;
+    }
+    const n = (backup.data.leads || []).length;
+    if (!confirm(`Backup mit ${n} Leads wiederherstellen?\n\nAchtung: Deine aktuellen Daten in diesem Browser werden dadurch ersetzt.`)) return;
+    localStorage.setItem(STORE_KEY, JSON.stringify(backup.data));
+    if (backup.finder) localStorage.setItem("leadcrm.finder", JSON.stringify(backup.finder));
+    toast(`Wiederhergestellt ✅ (${n} Leads)`);
+    renderAll();
+    // Finder-Ansicht auffrischen, falls geladen
+    if (typeof fdRenderQueue === "function") { fdRenderQueue(); fdRenderLog(); }
+  };
+  reader.readAsText(file);
+}
+
 /* ---------- Wiring ---------- */
 $$(".nav-item").forEach((n) => n.addEventListener("click", () => switchView(n.dataset.view)));
+$("#btn-backup").onclick = exportBackup;
+$("#restore-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) restoreBackup(f); e.target.value = ""; });
 $("#btn-new-lead").onclick = newLead;
 $("#btn-export").onclick = exportCSV;
 $("#btn-new-template").onclick = () => editTemplate(null);
