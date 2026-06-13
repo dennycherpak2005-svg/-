@@ -69,7 +69,8 @@ const Store = {
     const seen = new Set(
       data.leads.flatMap((l) => [l.email && l.email.toLowerCase(), l.phone && l.phone.replace(/\s/g, "")].filter(Boolean))
     );
-    let added = 0, skipped = 0;
+    let skipped = 0;
+    const addedLeads = [];
     list.forEach((input) => {
       const key1 = (input.email || "").toLowerCase();
       const key2 = (input.phone || "").replace(/\s/g, "");
@@ -78,10 +79,10 @@ const Store = {
       data.leads.push(lead);
       if (key1) seen.add(key1);
       if (key2) seen.add(key2);
-      added++;
+      addedLeads.push(lead);
     });
     writeAll(data);
-    return { added, skipped };
+    return { added: addedLeads.length, skipped, addedLeads };
   },
 
   updateLead(id, patch) {

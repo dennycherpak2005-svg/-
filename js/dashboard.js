@@ -308,6 +308,7 @@ function openLead(id) {
       <div class="quick-actions">
         <button class="btn btn-primary" id="d-mail" ${lead.email ? "" : "disabled"}>📧 Mail</button>
         <button class="btn btn-primary" id="d-call" ${lead.phone ? "" : "disabled"}>📞 Anrufen</button>
+        <button class="btn" id="d-n8n" ${lead.email ? "" : "disabled title='Keine E-Mail'"}>🚀 n8n</button>
       </div>
       <div class="row2">
         <div class="field"><label>Temperatur</label><select id="d-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === lead.temperature ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
@@ -336,6 +337,7 @@ function openLead(id) {
   $("#modal-close").onclick = closeModal;
   $("#d-mail").onclick = () => composeMail(id);
   $("#d-call").onclick = () => callLead(id);
+  if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => sendLeadsToN8n([Store.getLead(id)]);
   $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); renderBackground(); };
   $("#d-status").onchange = (e) => { Store.setStatus(id, e.target.value); toast("Status aktualisiert"); renderBackground(); };
   $("#d-edit").onclick = () => editLead(id);
@@ -499,7 +501,7 @@ function exportCSV() {
 function openOverlay() { $("#overlay").classList.add("open"); }
 function closeModal() { $("#overlay").classList.remove("open"); }
 
-const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", finder: "Lead-Finder", import: "Leads importieren", templates: "Mail-Vorlagen" };
+const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", finder: "Lead-Finder", n8n: "n8n Versand", import: "Leads importieren", templates: "Mail-Vorlagen" };
 function switchView(view) {
   state.view = view;
   $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
@@ -518,6 +520,103 @@ function renderAll() {
 function renderBackground() { renderStats(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
 
 /* ============================================================
+   n8n-Anbindung (Cold-Mail-Versand per Webhook)
+   ============================================================ */
+const N8N_KEY = "leadcrm.n8n";
+function n8nConfig() {
+  try { return JSON.parse(localStorage.getItem(N8N_KEY)) || { url: "", auto: false, log: [] }; }
+  catch { return { url: "", auto: false, log: [] }; }
+}
+function n8nSave(cfg) { localStorage.setItem(N8N_KEY, JSON.stringify(cfg)); }
+function n8nLog(msg) {
+  const cfg = n8nConfig();
+  cfg.log = cfg.log || [];
+  cfg.log.unshift({ at: Date.now(), msg });
+  cfg.log = cfg.log.slice(0, 40);
+  n8nSave(cfg);
+  renderN8nLog();
+}
+function renderN8nLog() {
+  const el = $("#n8n-log"); if (!el) return;
+  const cfg = n8nConfig();
+  el.innerHTML = (cfg.log && cfg.log.length)
+    ? cfg.log.map((e) => `<div class="fd-log-row"><span class="muted small">${new Date(e.at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}</span> ${esc(e.msg)}</div>`).join("")
+    : `<div class="muted small">Noch nichts gesendet.</div>`;
+}
+
+function leadPayload(l) {
+  return {
+    id: l.id, name: l.name, email: l.email, phone: l.phone,
+    company: l.company, position: l.position, website: l.website,
+    location: l.location, source: l.source, temperature: l.temperature, status: l.status,
+  };
+}
+
+/** POST an n8n. Versucht normales JSON (mit Bestätigung),
+ *  fällt bei CORS auf „fire-and-forget" zurück (Daten kommen trotzdem an). */
+async function postN8n(url, data) {
+  try {
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    return { ok: r.ok, status: r.status };
+  } catch (_) {
+    try {
+      await fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(data) });
+      return { ok: true, status: "gesendet (ohne Bestätigung)" };
+    } catch (e2) { return { ok: false, status: e2.message }; }
+  }
+}
+
+async function sendLeadsToN8n(leads, opts = {}) {
+  const cfg = n8nConfig();
+  if (!cfg.url) { toast("Erst n8n Webhook-URL eintragen"); switchView("n8n"); return; }
+  const list = leads.filter((l) => l && l.email);
+  if (!list.length) { if (!opts.silent) toast("Keine Leads mit E-Mail dabei"); return; }
+  let ok = 0, fail = 0;
+  for (const l of list) {
+    const res = await postN8n(cfg.url, leadPayload(l));
+    if (res.ok) { ok++; Store.logActivity(l.id, { type: "mail", outcome: "An n8n (Cold-Mail) gesendet", status: l.status === "offen" ? "kontaktiert" : l.status }); }
+    else fail++;
+  }
+  n8nLog(`${ok} Lead(s) an n8n gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}`);
+  if (!opts.silent) toast(`${ok} an n8n gesendet${fail ? ` (${fail} Fehler)` : " ✅"}`);
+  renderAll();
+}
+
+/** Wird vom Lead-Finder nach dem Import aufgerufen (Auto-Versand). */
+window.autoSendNewLeads = function (addedLeads) {
+  const cfg = n8nConfig();
+  if (cfg.auto && cfg.url && addedLeads && addedLeads.length) {
+    sendLeadsToN8n(addedLeads, { silent: true });
+  }
+};
+
+function initN8n() {
+  const cfg = n8nConfig();
+  if ($("#n8n-url")) $("#n8n-url").value = cfg.url || "";
+  if ($("#n8n-auto")) $("#n8n-auto").checked = !!cfg.auto;
+  renderN8nLog();
+
+  $("#n8n-save").onclick = () => {
+    const c = n8nConfig(); c.url = $("#n8n-url").value.trim(); n8nSave(c);
+    toast(c.url ? "Webhook-URL gespeichert ✅" : "URL geleert");
+  };
+  $("#n8n-auto").addEventListener("change", (e) => { const c = n8nConfig(); c.auto = e.target.checked; n8nSave(c); toast(e.target.checked ? "Auto-Versand an 🤖" : "Auto-Versand aus"); });
+  $("#n8n-test").onclick = async () => {
+    const url = $("#n8n-url").value.trim();
+    if (!url) { toast("Bitte erst die Webhook-URL eintragen"); return; }
+    const c = n8nConfig(); c.url = url; n8nSave(c);
+    const res = await postN8n(url, { test: true, name: "Test Lead", email: "test@example.com", company: "Beispiel GmbH" });
+    n8nLog(res.ok ? `🧪 Test gesendet (${res.status})` : `🧪 Test fehlgeschlagen: ${res.status}`);
+    toast(res.ok ? "Test gesendet – check dein n8n 🧪" : "Test fehlgeschlagen");
+  };
+  $("#btn-n8n-bulk").onclick = () => {
+    const list = filtered().filter((l) => l.email);
+    if (!list.length) { toast("Keine Leads mit E-Mail in der aktuellen Liste"); return; }
+    if (confirm(`${list.length} Lead(s) mit E-Mail an n8n senden?`)) sendLeadsToN8n(list);
+  };
+}
+
+/* ============================================================
    Komplett-Backup & Wiederherstellung (alles in einer Datei)
    ============================================================ */
 function exportBackup() {
@@ -527,6 +626,7 @@ function exportBackup() {
     exportedAt: new Date().toISOString(),
     data: JSON.parse(localStorage.getItem(STORE_KEY) || "{}"),          // Leads, Notizen, Vorlagen
     finder: JSON.parse(localStorage.getItem("leadcrm.finder") || "null"), // gespeicherte Suchen + Auto
+    n8n: JSON.parse(localStorage.getItem("leadcrm.n8n") || "null"),     // Webhook-URL + Auto-Versand
   };
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
@@ -549,8 +649,10 @@ function restoreBackup(file) {
     if (!confirm(`Backup mit ${n} Leads wiederherstellen?\n\nAchtung: Deine aktuellen Daten in diesem Browser werden dadurch ersetzt.`)) return;
     localStorage.setItem(STORE_KEY, JSON.stringify(backup.data));
     if (backup.finder) localStorage.setItem("leadcrm.finder", JSON.stringify(backup.finder));
+    if (backup.n8n) localStorage.setItem("leadcrm.n8n", JSON.stringify(backup.n8n));
     toast(`Wiederhergestellt ✅ (${n} Leads)`);
     renderAll();
+    initN8n();
     // Finder-Ansicht auffrischen, falls geladen
     if (typeof fdRenderQueue === "function") { fdRenderQueue(); fdRenderLog(); }
   };
@@ -584,4 +686,5 @@ $("#global-search").addEventListener("input", (e) => {
 });
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
 
+initN8n();
 renderAll();

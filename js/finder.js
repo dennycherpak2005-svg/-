@@ -184,6 +184,7 @@ function fdImport(leads, sourceLabel) {
   const res = Store.importLeads(tagged);
   toast(`${res.added} neue Leads übernommen${res.skipped ? `, ${res.skipped} Duplikate` : ""} ✅`);
   renderAll();
+  if (typeof window.autoSendNewLeads === "function") window.autoSendNewLeads(res.addedLeads);
   return res;
 }
 
@@ -244,7 +245,7 @@ async function autoTick() {
     const leads = await runSearch(q.branche, q.stadt);
     const res = Store.importLeads(leads.map((l) => ({ ...l, source: `Auto: ${q.branche} · ${q.stadt}` })));
     fdLog(`${q.branche} · ${q.stadt}: ${res.added} neu${res.skipped ? `, ${res.skipped} bekannt` : ""}`);
-    if (res.added) renderAll();
+    if (res.added) { renderAll(); if (typeof window.autoSendNewLeads === "function") window.autoSendNewLeads(res.addedLeads); }
   } catch (e) {
     fdLog(`⚠️ ${q.branche} · ${q.stadt}: ${e.message}`);
   } finally {

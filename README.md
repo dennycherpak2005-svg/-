@@ -13,6 +13,7 @@ Akquise-Mail rausschicken oder anrufen, Ergebnisse protokollieren und Follow-ups
 - **🎯 Arbeitsliste** – alle Leads zum Durchackern, Filter nach Temperatur & Status, Suche
 - **🔍 Lead-Finder (Auto-Scraper)** – Branche + Stadt eingeben → zieht automatisch Firmen (Name, Telefon, Webseite, Adresse) aus **OpenStreetMap** (kostenlos, kein API-Key). **Auto-Modus** holt im Hintergrund laufend neue Leads aus gespeicherten Suchen
 - **📧 Akquise-Mail per Klick** – öffnet dein Mailprogramm mit vorausgefülltem Text (Vorlagen mit Platzhaltern), Kontakt wird automatisch protokolliert
+- **🔗 n8n-Anbindung** – Leads per Webhook an deine n8n-Cold-Mail-Automation schicken: Knopf pro Lead, Sammel-Versand der gefilterten Liste, oder Auto-Versand jedes neuen Leads mit E-Mail
 - **📞 Klick-to-Call** – wählt direkt, danach Ergebnis loggen (erreicht / Termin / Mailbox / nicht erreicht / kein Interesse) inkl. automatischem Follow-up
 - **📥 Lead-Import** – CSV-Datei oder einfach Liste reinkopieren; E-Mail & Telefon werden automatisch erkannt, Duplikate übersprungen
 - **✉️ Mail-Vorlagen** – eigene Akquise-Texte verwalten, Platzhalter `{{vorname}}`, `{{firma}}`, …
@@ -60,6 +61,23 @@ Holt Firmen automatisch aus **OpenStreetMap** – kostenlos und ohne API-Key:
 > ⚖️ **Rechtlicher Hinweis:** Kalte Werbe-E-Mails an Firmen ohne Einwilligung sind
 > in Deutschland grundsätzlich unzulässig (UWG §7); telefonische B2B-Ansprache ist
 > die sicherere Schiene. Gescrapte Personendaten unterliegen der DSGVO.
+
+## 🔗 n8n-Anbindung (Cold-Mail-Versand)
+
+Verbindet das CRM mit deiner n8n-Automation, die das Versenden übernimmt:
+
+1. In n8n eine Automation mit **Webhook-Node** als Trigger anlegen → URL kopieren
+2. Im CRM links **🔗 n8n Versand** → URL einfügen → **Speichern** → **🧪 Test senden**
+3. Leads rausschicken:
+   - **🚀 n8n** im Lead-Detail (einzeln)
+   - **🚀 An n8n** in der Arbeitsliste (alle gefilterten mit E-Mail)
+   - Häkchen **„automatisch senden"** → jeder neue gescrapte Lead mit E-Mail geht sofort raus
+4. Pro Lead wird ein JSON gesendet (`name`, `email`, `phone`, `company`, `position`,
+   `website`, `location`, `source`, `temperature`, `status`).
+
+> 💡 Im n8n-Webhook-Node unter **„Allowed Origins (CORS)"** ein `*` eintragen, damit
+> das CRM eine Erfolgsbestätigung erhält. Ohne das wird trotzdem gesendet (ohne Rückmeldung).
+> Voraussetzung für echten Versand „rund um die Uhr": dein n8n läuft in der Cloud / auf einem Server.
 
 ## 📥 Import-Format
 

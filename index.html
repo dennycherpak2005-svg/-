@@ -14,6 +14,7 @@
       <a class="nav-item active" data-view="cockpit"><span class="ico">📊</span> Cockpit</a>
       <a class="nav-item" data-view="worklist"><span class="ico">🎯</span> Arbeitsliste</a>
       <a class="nav-item" data-view="finder"><span class="ico">🔍</span> Lead-Finder</a>
+      <a class="nav-item" data-view="n8n"><span class="ico">🔗</span> n8n Versand</a>
       <a class="nav-item" data-view="import"><span class="ico">📥</span> Leads importieren</a>
       <a class="nav-item" data-view="templates"><span class="ico">✉️</span> Mail-Vorlagen</a>
       <div class="spacer"></div>
@@ -59,7 +60,10 @@
           <div class="panel">
             <div class="panel-head">
               <h2>🎯 Arbeitsliste</h2>
-              <div class="right"><button class="btn btn-sm" id="btn-export">⬇︎ CSV</button></div>
+              <div class="right">
+                <button class="btn btn-sm" id="btn-n8n-bulk">🚀 An n8n</button>
+                <button class="btn btn-sm" id="btn-export">⬇︎ CSV</button>
+              </div>
             </div>
             <div class="filter-bar">
               <div class="filter-group" id="temp-filter"></div>
@@ -110,6 +114,36 @@
                 <h4 class="fd-h4">Verlauf</h4>
                 <div id="fd-log" class="fd-log"></div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== n8n Versand ===== -->
+        <section class="view" id="view-n8n">
+          <div class="panel">
+            <div class="panel-head"><h2>🔗 n8n Cold-Mail-Versand</h2><div class="right"><span class="muted small" id="n8n-state"></span></div></div>
+            <div class="finder-body">
+              <div class="field">
+                <label>n8n Webhook-URL</label>
+                <input id="n8n-url" placeholder="https://dein-n8n.app/webhook/cold-mail" />
+              </div>
+              <div class="finder-actions">
+                <button class="btn btn-primary" id="n8n-save">Speichern</button>
+                <button class="btn" id="n8n-test">🧪 Test senden</button>
+                <label class="inline-check"><input type="checkbox" id="n8n-auto" /> Neue gescrapte Leads <b>mit E-Mail</b> automatisch senden</label>
+              </div>
+              <div class="n8n-info">
+                <b>So funktioniert's:</b> Mein Tool schickt pro Lead ein JSON an deinen Webhook. Deine n8n-Automation übernimmt das Versenden.
+                <div class="muted small" style="margin-top:8px">Gesendete Felder pro Lead:</div>
+                <pre class="n8n-pre">{
+  "name": "...", "email": "...", "phone": "...",
+  "company": "...", "position": "...", "website": "...",
+  "location": "...", "source": "...", "temperature": "...", "status": "..."
+}</pre>
+                <div class="muted small">💡 Tipp: Im n8n-<b>Webhook-Node</b> unter „Allowed Origins (CORS)" ein <code>*</code> eintragen – dann bekommt mein Tool eine Erfolgs-Bestätigung. Ohne das wird trotzdem gesendet (nur ohne Rückmeldung).</div>
+              </div>
+              <h4 class="fd-h4">Versand-Verlauf</h4>
+              <div id="n8n-log" class="fd-log"></div>
             </div>
           </div>
         </section>

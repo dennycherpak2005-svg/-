@@ -343,3 +343,9 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
   border-radius: 9px; padding: 9px 10px; cursor: pointer; transition: background .15s;
 }
 .side-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+/* ---------- n8n Versand ---------- */
+.inline-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-soft); cursor: pointer; }
+.inline-check input { width: 16px; height: 16px; accent-color: var(--primary); }
+.n8n-info { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 14px 0; font-size: 14px; }
+.n8n-pre { background: var(--bg); color: #cbd5e1; border-radius: 10px; padding: 12px; font-size: 12px; overflow-x: auto; margin: 6px 0 12px; line-height: 1.5; }
