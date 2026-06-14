@@ -1,3 +1,16 @@
+# n8n-Workflows für das Akquise-Cockpit
+
+Zwei schlanke Webhook-Workflows:
+- `crm-cold-mail.json` — **Erstmail** (Pfad `/webhook/crm-cold-mail`)
+- `crm-followup.json` — **Follow-up / Nachfass-Mail** (Pfad `/webhook/crm-followup`)
+
+Beide importieren, Credentials bestätigen, aktivieren, dann die jeweilige
+Production-URL im Cockpit unter **🔗 n8n Versand** eintragen (Erstmail-Feld +
+Follow-up-Feld). Im CRM:
+- **🚀 n8n** = Erstmail, **↩️ Follow-up** = Nachfass (pro Lead oder „Alle fälligen anschreiben" im Cockpit).
+
+---
+
 # n8n-Workflow: CRM Cold Mail (Webhook)
 
 Schlanker Workflow, der die Leads aus dem Akquise-Cockpit per **Webhook** empfängt

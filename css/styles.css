@@ -296,8 +296,8 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
 .mh-sub { font-size: 13px; color: var(--text-soft); }
 
 /* Quick-Actions im Detail */
-.quick-actions { display: flex; gap: 10px; margin-bottom: 18px; }
-.quick-actions .btn { flex: 1; justify-content: center; }
+.quick-actions { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+.quick-actions .btn { flex: 1 1 auto; min-width: 110px; justify-content: center; }
 
 /* Call-Modal */
 .call-number { display: block; text-align: center; font-size: 26px; font-weight: 800; color: var(--primary); text-decoration: none; padding: 16px; background: var(--primary-soft); border-radius: 14px; }

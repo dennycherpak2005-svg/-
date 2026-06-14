@@ -45,7 +45,7 @@
           <div class="stats" id="stat-cards"></div>
           <div class="cockpit-grid">
             <div class="panel">
-              <div class="panel-head"><h2>⏰ Follow-ups fällig</h2></div>
+              <div class="panel-head"><h2>⏰ Follow-ups fällig</h2><div class="right"><button class="btn btn-sm" id="btn-followup-due">↩️ Alle fälligen anschreiben</button></div></div>
               <div id="followups"></div>
             </div>
             <div class="panel">
@@ -124,13 +124,17 @@
             <div class="panel-head"><h2>🔗 n8n Cold-Mail-Versand</h2><div class="right"><span class="muted small" id="n8n-state"></span></div></div>
             <div class="finder-body">
               <div class="field">
-                <label>n8n Webhook-URL</label>
-                <input id="n8n-url" placeholder="https://dein-n8n.app/webhook/cold-mail" />
+                <label>n8n Webhook-URL (Erstmail)</label>
+                <input id="n8n-url" placeholder="https://dein-n8n.app/webhook/crm-cold-mail" />
+              </div>
+              <div class="field">
+                <label>n8n Follow-up Webhook-URL</label>
+                <input id="n8n-followup-url" placeholder="https://dein-n8n.app/webhook/crm-followup" />
               </div>
               <div class="finder-actions">
                 <button class="btn btn-primary" id="n8n-save">Speichern</button>
                 <button class="btn" id="n8n-test">🧪 Test senden</button>
-                <label class="inline-check"><input type="checkbox" id="n8n-auto" /> Neue gescrapte Leads <b>mit E-Mail</b> automatisch senden</label>
+                <label class="inline-check"><input type="checkbox" id="n8n-auto" /> Neue Leads <b>mit E-Mail oder Website</b> automatisch senden</label>
               </div>
               <div class="n8n-info">
                 <b>So funktioniert's:</b> Mein Tool schickt pro Lead ein JSON an deinen Webhook. Deine n8n-Automation übernimmt das Versenden.

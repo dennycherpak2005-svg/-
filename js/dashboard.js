@@ -308,7 +308,8 @@ function openLead(id) {
       <div class="quick-actions">
         <button class="btn btn-primary" id="d-mail" ${lead.email ? "" : "disabled"}>📧 Mail</button>
         <button class="btn btn-primary" id="d-call" ${lead.phone ? "" : "disabled"}>📞 Anrufen</button>
-        <button class="btn" id="d-n8n" ${lead.email ? "" : "disabled title='Keine E-Mail'"}>🚀 n8n</button>
+        <button class="btn" id="d-n8n" ${lead.email || lead.website ? "" : "disabled title='Keine E-Mail/Website'"}>🚀 n8n</button>
+        <button class="btn" id="d-followup" ${lead.email || lead.website ? "" : "disabled title='Keine E-Mail/Website'"}>↩️ Follow-up</button>
       </div>
       <div class="row2">
         <div class="field"><label>Temperatur</label><select id="d-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === lead.temperature ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
@@ -337,7 +338,8 @@ function openLead(id) {
   $("#modal-close").onclick = closeModal;
   $("#d-mail").onclick = () => composeMail(id);
   $("#d-call").onclick = () => callLead(id);
-  if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => sendLeadsToN8n([Store.getLead(id)]);
+  if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => pushToN8n([Store.getLead(id)], "first");
+  if (!$("#d-followup").disabled) $("#d-followup").onclick = () => pushToN8n([Store.getLead(id)], "followup");
   $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); renderBackground(); };
   $("#d-status").onchange = (e) => { Store.setStatus(id, e.target.value); toast("Status aktualisiert"); renderBackground(); };
   $("#d-edit").onclick = () => editLead(id);
@@ -524,8 +526,8 @@ function renderBackground() { renderStats(); renderFollowups(); renderHotlist();
    ============================================================ */
 const N8N_KEY = "leadcrm.n8n";
 function n8nConfig() {
-  try { return JSON.parse(localStorage.getItem(N8N_KEY)) || { url: "", auto: false, log: [] }; }
-  catch { return { url: "", auto: false, log: [] }; }
+  try { return JSON.parse(localStorage.getItem(N8N_KEY)) || { url: "", followupUrl: "", auto: false, log: [] }; }
+  catch { return { url: "", followupUrl: "", auto: false, log: [] }; }
 }
 function n8nSave(cfg) { localStorage.setItem(N8N_KEY, JSON.stringify(cfg)); }
 function n8nLog(msg) {
@@ -540,7 +542,7 @@ function updateN8nState() {
   const el = $("#n8n-state"); if (!el) return;
   const cfg = n8nConfig();
   if (cfg.url) {
-    el.innerHTML = `✅ verbunden${cfg.auto ? " · Auto-Versand an 🤖" : ""}`;
+    el.innerHTML = `✅ verbunden${cfg.followupUrl ? " · Follow-up ✅" : " · Follow-up fehlt"}${cfg.auto ? " · Auto 🤖" : ""}`;
     el.style.color = "var(--success)";
   } else {
     el.textContent = "⚠️ noch keine Webhook-URL eingetragen";
@@ -577,19 +579,27 @@ async function postN8n(url, data) {
   }
 }
 
-async function sendLeadsToN8n(leads, opts = {}) {
+/** Leads an n8n schicken. mode: "first" (Erstmail) | "followup" (Nachfass). */
+async function pushToN8n(leads, mode = "first", opts = {}) {
   const cfg = n8nConfig();
-  if (!cfg.url) { toast("Erst n8n Webhook-URL eintragen"); switchView("n8n"); return; }
-  const list = leads.filter((l) => l && l.email);
-  if (!list.length) { if (!opts.silent) toast("Keine Leads mit E-Mail dabei"); return; }
+  const url = mode === "followup" ? cfg.followupUrl : cfg.url;
+  const label = mode === "followup" ? "Follow-up" : "Cold-Mail";
+  if (!url) { toast(`Erst die ${label}-Webhook-URL eintragen`); switchView("n8n"); return; }
+  // E-Mail ODER Website reicht – n8n holt die E-Mail notfalls von der Website
+  const list = leads.filter((l) => l && (l.email || l.website));
+  if (!list.length) { if (!opts.silent) toast("Keine Leads mit E-Mail oder Website dabei"); return; }
   let ok = 0, fail = 0;
   for (const l of list) {
-    const res = await postN8n(cfg.url, leadPayload(l));
-    if (res.ok) { ok++; Store.logActivity(l.id, { type: "mail", outcome: "An n8n (Cold-Mail) gesendet", status: l.status === "offen" ? "kontaktiert" : l.status }); }
-    else fail++;
+    const res = await postN8n(url, leadPayload(l));
+    if (res.ok) {
+      ok++;
+      const patch = { type: "mail", outcome: `${label} an n8n gesendet`, status: l.status === "offen" ? "kontaktiert" : l.status };
+      if (mode === "followup") patch.nextFollowUp = Date.now() + 7 * 86400000; // nächstes Follow-up in 7 Tagen
+      Store.logActivity(l.id, patch);
+    } else fail++;
   }
-  n8nLog(`${ok} Lead(s) an n8n gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}`);
-  if (!opts.silent) toast(`${ok} an n8n gesendet${fail ? ` (${fail} Fehler)` : " ✅"}`);
+  n8nLog(`${ok} ${label}(s) an n8n gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}`);
+  if (!opts.silent) toast(`${ok} ${label} gesendet${fail ? ` (${fail} Fehler)` : " ✅"}`);
   renderAll();
 }
 
@@ -597,21 +607,25 @@ async function sendLeadsToN8n(leads, opts = {}) {
 window.autoSendNewLeads = function (addedLeads) {
   const cfg = n8nConfig();
   if (cfg.auto && cfg.url && addedLeads && addedLeads.length) {
-    sendLeadsToN8n(addedLeads, { silent: true });
+    pushToN8n(addedLeads, "first", { silent: true });
   }
 };
 
 function initN8n() {
   const cfg = n8nConfig();
   if ($("#n8n-url")) $("#n8n-url").value = cfg.url || "";
+  if ($("#n8n-followup-url")) $("#n8n-followup-url").value = cfg.followupUrl || "";
   if ($("#n8n-auto")) $("#n8n-auto").checked = !!cfg.auto;
   renderN8nLog();
   updateN8nState();
 
   $("#n8n-save").onclick = () => {
-    const c = n8nConfig(); c.url = $("#n8n-url").value.trim(); n8nSave(c);
+    const c = n8nConfig();
+    c.url = $("#n8n-url").value.trim();
+    c.followupUrl = $("#n8n-followup-url").value.trim();
+    n8nSave(c);
     updateN8nState();
-    toast(c.url ? "Webhook-URL gespeichert ✅" : "URL geleert");
+    toast("Gespeichert ✅");
   };
   $("#n8n-auto").addEventListener("change", (e) => { const c = n8nConfig(); c.auto = e.target.checked; n8nSave(c); updateN8nState(); toast(e.target.checked ? "Auto-Versand an 🤖" : "Auto-Versand aus"); });
   $("#n8n-test").onclick = async () => {
@@ -624,9 +638,14 @@ function initN8n() {
     toast(res.ok ? (to ? "Test-Mail ausgelöst 🧪" : "Verbindung getestet ✅") : "Test fehlgeschlagen");
   };
   $("#btn-n8n-bulk").onclick = () => {
-    const list = filtered().filter((l) => l.email);
-    if (!list.length) { toast("Keine Leads mit E-Mail in der aktuellen Liste"); return; }
-    if (confirm(`${list.length} Lead(s) mit E-Mail an n8n senden?`)) sendLeadsToN8n(list);
+    const list = filtered().filter((l) => l.email || l.website);
+    if (!list.length) { toast("Keine sendbaren Leads in der aktuellen Liste"); return; }
+    if (confirm(`${list.length} Lead(s) an n8n senden (Erstmail)?`)) pushToN8n(list, "first");
+  };
+  if ($("#btn-followup-due")) $("#btn-followup-due").onclick = () => {
+    const list = Store.getLeads().filter((l) => followDue(l) && (l.email || l.website));
+    if (!list.length) { toast("Keine fälligen Follow-ups mit E-Mail/Website"); return; }
+    if (confirm(`${list.length} fällige(n) Lead(s) ein Follow-up schicken?`)) pushToN8n(list, "followup");
   };
 }
 
