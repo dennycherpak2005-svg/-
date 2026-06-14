@@ -12,31 +12,44 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-1040, 240],
+      "position": [
+        -1280,
+        240
+      ],
       "id": "b2000000-0000-4000-8000-000000000001",
-      "name": "Webhook – Follow-up aus CRM",
+      "name": "Webhook – Lead aus CRM",
       "webhookId": "crm-followup-hook"
     },
     {
       "parameters": {
-        "jsCode": "// Daten vom CRM annehmen (JSON oder Text-Fallback) und mappen.\nconst raw = $json.body ?? $json;\nlet d = raw;\nif (typeof raw === 'string') {\n  try { d = JSON.parse(raw); } catch (e) { d = {}; }\n}\n\nreturn [{\n  json: {\n    Firma: (d.company || d.Firma || d.name || '').trim(),\n    Ansprechpartner: (d.name || d.Ansprechpartner || '').trim(),\n    Email: (d.email || d.Email || '').trim(),\n    Website: (d.website || d.Website || '').trim(),\n    Branche: (d.source || d.Branche || '').trim(),\n    Ort: (d.location || d.Ort || '').trim()\n  }\n}];"
+        "jsCode": "// Daten vom CRM annehmen (JSON oder Text-Fallback) und mappen.\nconst raw = $json.body ?? $json;\nlet d = raw;\nif (typeof raw === 'string') { try { d = JSON.parse(raw); } catch (e) { d = {}; } }\nreturn [{ json: {\n  Firma: (d.company || d.Firma || d.name || '').trim(),\n  Ansprechpartner: (d.name || d.Ansprechpartner || '').trim(),\n  Email: (d.email || d.Email || '').trim(),\n  Website: (d.website || d.Website || '').trim(),\n  Branche: (d.source || d.Branche || '').trim(),\n  Ort: (d.location || d.Ort || '').trim()\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-816, 240],
+      "position": [
+        -1060,
+        240
+      ],
       "id": "b2000000-0000-4000-8000-000000000002",
       "name": "Lead normalisieren"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "has-website",
               "leftValue": "={{ $json.Website }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -45,56 +58,123 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-592, 240],
+      "position": [
+        -840,
+        240
+      ],
       "id": "b2000000-0000-4000-8000-000000000003",
       "name": "Website vorhanden?"
     },
     {
       "parameters": {
-        "url": "={{ $json.Website.startsWith('http') ? $json.Website : 'https://' + $json.Website }}",
+        "jsCode": "const lead = $('Lead normalisieren').item.json;\nlet w = (lead.Website || '').trim();\nif (w && !w.startsWith('http')) w = 'https://' + w;\nlet homeUrl = w, impressumUrl = w;\ntry { const u = new URL(w); homeUrl = u.origin; impressumUrl = u.origin + '/impressum'; } catch (e) {}\nreturn [{ json: { ...lead, homeUrl, impressumUrl } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000004",
+      "name": "Impressum-URL bauen"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.homeUrl }}",
         "options": {
-          "redirect": { "redirect": { "maxRedirects": 3 } },
-          "response": { "response": { "responseFormat": "text" } },
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
           "timeout": 10000
         }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-368, 144],
-      "id": "b2000000-0000-4000-8000-000000000004",
-      "name": "Website scrapen",
+      "position": [
+        -400,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000005",
+      "name": "Homepage scrapen",
       "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "// E-Mail von der Website holen, falls das CRM keine geliefert hat.\nconst lead = $('Lead normalisieren').item.json;\nlet email = (lead.Email || '').trim();\n\nlet html = '';\ntry { html = $input.first().json.data || $input.first().json.body || ''; } catch (e) {}\n\nif (!email && html) {\n  const matches = String(html).match(/[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}/g) || [];\n  const junk = /(\\.png|\\.jpg|\\.jpeg|\\.gif|\\.webp|\\.svg|sentry|wixpress|example|@2x|domain\\.com)/i;\n  const good = matches.find((m) => !junk.test(m));\n  if (good) email = good;\n}\n\nreturn [{ json: { ...lead, Email: email } }];"
+        "url": "={{ $('Impressum-URL bauen').item.json.impressumUrl }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 10000
+        }
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-144, 144],
-      "id": "b2000000-0000-4000-8000-000000000005",
-      "name": "Email aus Website"
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000006",
+      "name": "Impressum scrapen",
+      "continueOnFail": true
     },
     {
       "parameters": {
-        "jsCode": "return [{ json: { ...$('Lead normalisieren').item.json } }];"
+        "jsCode": "const lead = $('Lead normalisieren').item.json;\nlet homeHtml = '', impHtml = '';\ntry { const h = $('Homepage scrapen').item.json; homeHtml = h.data || h.body || ''; } catch (e) {}\ntry { const i = $('Impressum scrapen').item.json; impHtml = i.data || i.body || ''; } catch (e) {}\nconst strip = (h) => String(h || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/\\s+/g, ' ');\nconst homeText = strip(homeHtml), impText = strip(impHtml);\n\nlet email = (lead.Email || '').trim();\nif (!email) {\n  const junk = /(\\.png|\\.jpg|\\.jpeg|\\.gif|\\.webp|\\.svg|sentry|wixpress|example|@2x|domain\\.com)/i;\n  const grab = (t) => (String(t).match(/[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}/g) || []).find((m) => !junk.test(m));\n  email = grab(impHtml) || grab(homeHtml) || '';\n}\n\nfunction findGF(t) {\n  if (!t) return '';\n  const pats = [\n    /Gesch[aä]ftsf[uü]hrer(?:in)?(?:\\s*\\([^)]*\\))?\\s*:?\\s*([A-ZÄÖÜ][a-zäöüß]+(?:\\s+[A-ZÄÖÜ][a-zäöüß]+){1,2})/,\n    /Vertreten durch\\s*:?\\s*(?:den |die )?(?:Gesch[aä]ftsf[uü]hrer(?:in)?\\s*)?([A-ZÄÖÜ][a-zäöüß]+\\s+[A-ZÄÖÜ][a-zäöüß]+)/,\n    /Inhaber(?:in)?\\s*:?\\s*([A-ZÄÖÜ][a-zäöüß]+\\s+[A-ZÄÖÜ][a-zäöüß]+)/\n  ];\n  for (const re of pats) { const m = t.match(re); if (m) return m[1].trim(); }\n  return '';\n}\nconst gf = findGF(impText) || findGF(homeText);\n\nconst MALE = new Set(['alexander','andreas','thomas','michael','stefan','stephan','christian','daniel','markus','marcus','martin','peter','jan','jens','frank','klaus','wolfgang','jürgen','juergen','dirk','sven','tobias','sebastian','florian','felix','lukas','lucas','max','maximilian','paul','jonas','david','philipp','simon','benjamin','tim','niklas','dennis','denis','marco','marko','oliver','holger','ralf','ralph','uwe','dieter','bernd','heinz','manfred','rainer','reiner','torsten','thorsten','matthias','mathias','kai','lars','nico','patrick','robert','denny','erik','hans','georg','werner','günter','guenter','norbert']);\nconst FEMALE = new Set(['anna','anne','maria','marie','sabine','susanne','andrea','petra','claudia','julia','katrin','kathrin','katharina','christina','christine','nicole','stefanie','stephanie','sandra','melanie','laura','lisa','sarah','sara','lena','lea','hannah','hanna','emma','birgit','gabriele','gabi','monika','brigitte','renate','ursula','ingrid','karin','heike','silke','tanja','jessica','vanessa','michaela','manuela','daniela','franziska','johanna','sophie','sophia','annika','jana','janina','nadine','elke','helga','gisela','erika']);\n\nfunction anredeFor(name) {\n  if (!name || name === lead.Firma) return 'Guten Tag';\n  const parts = name.trim().split(/\\s+/);\n  const first = parts[0].toLowerCase();\n  const last = parts[parts.length - 1];\n  if (MALE.has(first)) return 'Hallo Herr ' + last;\n  if (FEMALE.has(first)) return 'Hallo Frau ' + last;\n  return 'Hallo ' + name;\n}\nconst ansprech = gf || (lead.Ansprechpartner && lead.Ansprechpartner !== lead.Firma ? lead.Ansprechpartner : '');\nreturn [{ json: { Firma: lead.Firma, Ansprechpartner: ansprech, Email: email, Website: lead.Website, Branche: lead.Branche, Ort: lead.Ort, Anrede: anredeFor(ansprech) } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-368, 384],
-      "id": "b2000000-0000-4000-8000-000000000006",
+      "position": [
+        40,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000007",
+      "name": "Daten extrahieren"
+    },
+    {
+      "parameters": {
+        "jsCode": "const lead = $('Lead normalisieren').item.json;\nconst anrede = (lead.Ansprechpartner && lead.Ansprechpartner !== lead.Firma) ? 'Hallo ' + lead.Ansprechpartner : 'Guten Tag';\nreturn [{ json: { ...lead, Anrede: anrede } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -400,
+        360
+      ],
+      "id": "b2000000-0000-4000-8000-000000000008",
       "name": "Ohne Website"
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": false, "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": false,
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "has-email",
               "leftValue": "={{ $json.Email }}",
               "rightValue": "",
-              "operator": { "type": "string", "operation": "notEquals" }
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
             }
           ],
           "combinator": "and"
@@ -103,8 +183,11 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [120, 240],
-      "id": "b2000000-0000-4000-8000-000000000007",
+      "position": [
+        280,
+        240
+      ],
+      "id": "b2000000-0000-4000-8000-000000000009",
       "name": "Email vorhanden?"
     },
     {
@@ -112,7 +195,7 @@
         "sendTo": "={{ $json.Email }}",
         "subject": "=Nachfrage – {{ $json.Firma }}",
         "emailType": "text",
-        "message": "={{ ($json.Ansprechpartner && $json.Ansprechpartner !== $json.Firma) ? 'Hallo ' + $json.Ansprechpartner : 'Guten Tag' }},\n\nich hatte Ihnen vor ein paar Tagen geschrieben – falls es untergegangen ist, kein Problem.\n\nKurz nochmal die Idee: ein kleiner Assistent für die Website von {{ $json.Firma }}, der Kundenanfragen rund um die Uhr beantwortet – auch dann, wenn bei Ihnen gerade niemand ans Telefon kann.\n\nSoll ich Ihnen einfach das 2-Minuten-Beispiel schicken? Ein kurzes \"ja\" reicht.\n\nViele Grüße\nDenny Cherpak\nDC Marketing & Automation",
+        "message": "={{ $json.Anrede }},\\n\\nich hatte Ihnen vor ein paar Tagen geschrieben – falls es untergegangen ist, kein Problem.\\n\\nKurz nochmal die Idee: ein kleiner Assistent für die Website von {{ $json.Firma }}, der Kundenanfragen rund um die Uhr beantwortet – auch dann, wenn bei Ihnen gerade niemand ans Telefon kann.\\n\\nSoll ich Ihnen einfach das 2-Minuten-Beispiel schicken? Ein kurzes \\\"ja\\\" reicht.\\n\\nViele Grüße\\nDenny Cherpak\\nDC Marketing & Automation",
         "options": {
           "appendAttribution": false,
           "senderName": "Denny Cherpak"
@@ -120,12 +203,18 @@
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
-      "position": [360, 144],
-      "id": "b2000000-0000-4000-8000-000000000008",
+      "position": [
+        520,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000010",
       "name": "Gmail – Follow-up senden",
-      "webhookId": "crm-followup-gmail",
+      "webhookId": "crm-followup-hook-gmail",
       "credentials": {
-        "gmailOAuth2": { "id": "FgqzhUapSigSTvxt", "name": "Gmail account" }
+        "gmailOAuth2": {
+          "id": "FgqzhUapSigSTvxt",
+          "name": "Gmail account"
+        }
       },
       "continueOnFail": true
     },
@@ -158,16 +247,74 @@
             "Send Status": "FOLLOW-UP",
             "Time": "={{ new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) }}"
           },
-          "matchingColumns": ["Email"],
+          "matchingColumns": [
+            "Email"
+          ],
           "schema": [
-            { "id": "Firma", "displayName": "Firma", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Ansprechpartner", "displayName": "Ansprechpartner", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Email", "displayName": "Email", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Website", "displayName": "Website", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Branche", "displayName": "Branche", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Ort", "displayName": "Ort", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Send Status", "displayName": "Send Status", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Time", "displayName": "Time", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false }
+            {
+              "id": "Firma",
+              "displayName": "Firma",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Ansprechpartner",
+              "displayName": "Ansprechpartner",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Branche",
+              "displayName": "Branche",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Ort",
+              "displayName": "Ort",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Send Status",
+              "displayName": "Send Status",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
@@ -176,11 +323,17 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
-      "position": [600, 144],
-      "id": "b2000000-0000-4000-8000-000000000009",
+      "position": [
+        760,
+        140
+      ],
+      "id": "b2000000-0000-4000-8000-000000000011",
       "name": "Log: FOLLOW-UP",
       "credentials": {
-        "googleSheetsOAuth2Api": { "id": "Qmi6e5R4oOSOUHXx", "name": "Google Sheets account 2" }
+        "googleSheetsOAuth2Api": {
+          "id": "Qmi6e5R4oOSOUHXx",
+          "name": "Google Sheets account 2"
+        }
       }
     },
     {
@@ -209,19 +362,77 @@
             "Website": "={{ $json.Website }}",
             "Branche": "={{ $json.Branche }}",
             "Ort": "={{ $json.Ort }}",
-            "Send Status": "FOLLOW-UP KEINE EMAIL",
+            "Send Status": "KEINE EMAIL",
             "Time": "={{ new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }) }}"
           },
-          "matchingColumns": ["Email"],
+          "matchingColumns": [
+            "Email"
+          ],
           "schema": [
-            { "id": "Firma", "displayName": "Firma", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Ansprechpartner", "displayName": "Ansprechpartner", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Email", "displayName": "Email", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Website", "displayName": "Website", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Branche", "displayName": "Branche", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Ort", "displayName": "Ort", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Send Status", "displayName": "Send Status", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false },
-            { "id": "Time", "displayName": "Time", "type": "string", "canBeUsedToMatch": true, "display": true, "required": false }
+            {
+              "id": "Firma",
+              "displayName": "Firma",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Ansprechpartner",
+              "displayName": "Ansprechpartner",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Branche",
+              "displayName": "Branche",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Ort",
+              "displayName": "Ort",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Send Status",
+              "displayName": "Send Status",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            },
+            {
+              "id": "Time",
+              "displayName": "Time",
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "display": true,
+              "required": false
+            }
           ],
           "attemptToConvertTypes": false,
           "convertFieldsToString": true
@@ -230,47 +441,149 @@
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
-      "position": [360, 384],
-      "id": "b2000000-0000-4000-8000-000000000010",
+      "position": [
+        520,
+        360
+      ],
+      "id": "b2000000-0000-4000-8000-000000000012",
       "name": "Log: KEINE EMAIL",
       "credentials": {
-        "googleSheetsOAuth2Api": { "id": "Qmi6e5R4oOSOUHXx", "name": "Google Sheets account 2" }
+        "googleSheetsOAuth2Api": {
+          "id": "Qmi6e5R4oOSOUHXx",
+          "name": "Google Sheets account 2"
+        }
       }
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook – Follow-up aus CRM": {
-      "main": [[{ "node": "Lead normalisieren", "type": "main", "index": 0 }]]
+    "Webhook – Lead aus CRM": {
+      "main": [
+        [
+          {
+            "node": "Lead normalisieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Lead normalisieren": {
-      "main": [[{ "node": "Website vorhanden?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Website vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Website vorhanden?": {
       "main": [
-        [{ "node": "Website scrapen", "type": "main", "index": 0 }],
-        [{ "node": "Ohne Website", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Impressum-URL bauen",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ohne Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Website scrapen": {
-      "main": [[{ "node": "Email aus Website", "type": "main", "index": 0 }]]
+    "Impressum-URL bauen": {
+      "main": [
+        [
+          {
+            "node": "Homepage scrapen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
-    "Email aus Website": {
-      "main": [[{ "node": "Email vorhanden?", "type": "main", "index": 0 }]]
+    "Homepage scrapen": {
+      "main": [
+        [
+          {
+            "node": "Impressum scrapen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Impressum scrapen": {
+      "main": [
+        [
+          {
+            "node": "Daten extrahieren",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daten extrahieren": {
+      "main": [
+        [
+          {
+            "node": "Email vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Ohne Website": {
-      "main": [[{ "node": "Email vorhanden?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Email vorhanden?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Email vorhanden?": {
       "main": [
-        [{ "node": "Gmail – Follow-up senden", "type": "main", "index": 0 }],
-        [{ "node": "Log: KEINE EMAIL", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Gmail – Follow-up senden",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log: KEINE EMAIL",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Gmail – Follow-up senden": {
-      "main": [[{ "node": "Log: FOLLOW-UP", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Log: FOLLOW-UP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings": { "executionOrder": "v1" },
+  "settings": {
+    "executionOrder": "v1"
+  },
   "active": false
 }
