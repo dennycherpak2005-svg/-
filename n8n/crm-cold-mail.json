@@ -147,19 +147,6 @@
     },
     {
       "parameters": {
-        "jsCode": "const lead = $('Lead normalisieren').item.json;\nconst anrede = (lead.Ansprechpartner && lead.Ansprechpartner !== lead.Firma) ? 'Hallo ' + lead.Ansprechpartner : 'Guten Tag';\nreturn [{ json: { ...lead, Anrede: anrede } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -400,
-        360
-      ],
-      "id": "a1000000-0000-4000-8000-000000000008",
-      "name": "Ohne Website"
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": false,
@@ -488,13 +475,7 @@
             "index": 0
           }
         ],
-        [
-          {
-            "node": "Ohne Website",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Impressum-URL bauen": {
@@ -531,17 +512,6 @@
       ]
     },
     "Daten extrahieren": {
-      "main": [
-        [
-          {
-            "node": "Email vorhanden?",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Ohne Website": {
       "main": [
         [
           {
