@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>[DEINE FIRMA] – Mehr qualifizierte Anfragen für dein Business</title>
+  <meta name="description" content="[DEINE FIRMA] hilft Unternehmen, planbar an neue Kunden zu kommen. Persönlich, transparent und ohne Risiko. Jetzt kostenloses Erstgespräch sichern." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>" />
+  <style>
+    /* ============================================================
+       Landingpage – Vertrauen aufbauen für Cold-Mail-Empfänger
+       Farben passend zum CRM (Indigo → Violett → Pink)
+       ============================================================ */
+    :root{
+      --primary:#4f46e5; --primary-dark:#4338ca; --primary-soft:#eef2ff;
+      --accent:#db2777; --ink:#0f172a; --soft:#64748b; --line:#e2e8f0;
+      --bg:#ffffff; --bg-2:#f8fafc; --ok:#16a34a; --ok-soft:#dcfce7;
+      --shadow:0 10px 30px -12px rgba(15,23,42,.18);
+      --shadow-lg:0 30px 60px -20px rgba(79,70,229,.35);
+      --grad:linear-gradient(135deg,#4f46e5 0%,#7c3aed 50%,#db2777 100%);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink); line-height:1.6; background:var(--bg); -webkit-font-smoothing:antialiased;
+    }
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+    .btn{
+      display:inline-flex;align-items:center;gap:9px;justify-content:center;
+      padding:14px 26px;border-radius:12px;font-weight:700;font-size:16px;
+      cursor:pointer;border:1px solid transparent;transition:transform .08s,filter .15s,background .15s;
+    }
+    .btn-primary{background:var(--grad);color:#fff;box-shadow:var(--shadow-lg)}
+    .btn-primary:hover{filter:brightness(1.07)}
+    .btn-primary:active{transform:scale(.98)}
+    .btn-ghost{background:#fff;color:var(--ink);border-color:var(--line)}
+    .btn-ghost:hover{background:var(--bg-2)}
+
+    /* ---------- Nav ---------- */
+    header.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);
+      backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+    .nav-inner{display:flex;align-items:center;gap:18px;height:66px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+    .brand .logo{width:34px;height:34px;border-radius:10px;background:var(--grad);
+      display:grid;place-items:center;font-size:18px}
+    .nav-links{margin-left:auto;display:flex;align-items:center;gap:26px}
+    .nav-links a.link{font-size:15px;color:var(--soft);font-weight:500}
+    .nav-links a.link:hover{color:var(--ink)}
+    .nav .btn{padding:10px 18px;font-size:15px}
+    @media(max-width:760px){.nav-links a.link{display:none}}
+
+    /* ---------- Hero ---------- */
+    .hero{position:relative;overflow:hidden;padding:80px 0 70px;text-align:center}
+    .hero::before{content:"";position:absolute;inset:0;z-index:-1;
+      background:radial-gradient(60% 60% at 50% 0%,#eef2ff 0%,#fff 70%)}
+    .pill{display:inline-flex;align-items:center;gap:8px;background:var(--primary-soft);
+      color:var(--primary-dark);font-weight:600;font-size:14px;padding:7px 16px;border-radius:999px;margin-bottom:22px}
+    .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 4px var(--ok-soft)}
+    .hero h1{font-size:clamp(32px,5.5vw,54px);font-weight:800;line-height:1.1;letter-spacing:-1px}
+    .hero h1 .grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .hero p.lead{font-size:clamp(17px,2.4vw,21px);color:var(--soft);max-width:640px;margin:20px auto 0}
+    .hero .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+    .hero .reassure{margin-top:18px;font-size:14px;color:var(--soft)}
+    .hero .reassure b{color:var(--ink)}
+
+    /* ---------- Trust bar ---------- */
+    .trustbar{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg-2)}
+    .trustbar .wrap{display:flex;flex-wrap:wrap;gap:14px 40px;justify-content:center;align-items:center;padding:22px}
+    .trust-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--soft);font-weight:500}
+    .trust-item .ic{font-size:18px}
+
+    /* ---------- Sections ---------- */
+    section.block{padding:78px 0}
+    .eyebrow{text-align:center;color:var(--primary);font-weight:700;font-size:14px;letter-spacing:.6px;text-transform:uppercase}
+    .h2{text-align:center;font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.5px;margin-top:10px}
+    .sub{text-align:center;color:var(--soft);max-width:620px;margin:14px auto 0;font-size:17px}
+
+    /* stats */
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;margin-top:48px}
+    .stat{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:28px;text-align:center;box-shadow:var(--shadow)}
+    .stat .num{font-size:40px;font-weight:800;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+    .stat .cap{color:var(--soft);font-size:15px;margin-top:6px}
+
+    /* feature cards */
+    .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;margin-top:48px}
+    .feat{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:28px;transition:transform .15s,box-shadow .15s}
+    .feat:hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+    .feat .ic{width:48px;height:48px;border-radius:13px;background:var(--primary-soft);display:grid;place-items:center;font-size:24px;margin-bottom:16px}
+    .feat h3{font-size:19px;font-weight:700}
+    .feat p{color:var(--soft);margin-top:8px;font-size:15px}
+
+    /* process */
+    .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px;margin-top:48px}
+    .step{position:relative;background:var(--bg-2);border:1px solid var(--line);border-radius:var(--radius);padding:28px 24px}
+    .step .no{width:40px;height:40px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:800;font-size:17px;margin-bottom:16px}
+    .step h3{font-size:18px;font-weight:700}
+    .step p{color:var(--soft);margin-top:8px;font-size:15px}
+
+    /* testimonials */
+    .quotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:20px;margin-top:48px}
+    .quote{background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+    .quote .stars{color:#f59e0b;font-size:16px;letter-spacing:2px}
+    .quote p{margin-top:14px;font-size:16px}
+    .quote .who{display:flex;align-items:center;gap:12px;margin-top:18px}
+    .quote .ava{width:42px;height:42px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font-weight:700}
+    .quote .who .n{font-weight:700;font-size:15px}
+    .quote .who .r{color:var(--soft);font-size:13px}
+
+    /* about */
+    .about{background:var(--bg-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+    .about-grid{display:grid;grid-template-columns:1fr 1.3fr;gap:46px;align-items:center}
+    .about-photo{aspect-ratio:1/1;border-radius:24px;background:var(--grad);display:grid;place-items:center;
+      font-size:90px;color:#fff;box-shadow:var(--shadow-lg)}
+    .about h2{font-size:clamp(24px,3.5vw,34px);font-weight:800;letter-spacing:-.5px}
+    .about p{color:var(--soft);margin-top:16px;font-size:17px}
+    .about .sig{margin-top:20px;font-weight:700}
+    .about .sig span{display:block;color:var(--soft);font-weight:500;font-size:14px}
+    @media(max-width:760px){.about-grid{grid-template-columns:1fr;gap:28px}.about-photo{max-width:240px;margin:0 auto}}
+
+    /* faq */
+    .faq{max-width:760px;margin:48px auto 0}
+    details{border:1px solid var(--line);border-radius:14px;padding:0;margin-bottom:12px;background:var(--bg);overflow:hidden}
+    details summary{cursor:pointer;list-style:none;padding:20px 22px;font-weight:700;font-size:17px;display:flex;align-items:center;justify-content:space-between}
+    details summary::-webkit-details-marker{display:none}
+    details summary::after{content:"+";font-size:24px;color:var(--primary);font-weight:400;transition:transform .2s}
+    details[open] summary::after{transform:rotate(45deg)}
+    details .ans{padding:0 22px 20px;color:var(--soft);font-size:16px}
+
+    /* final CTA */
+    .cta-band{background:var(--grad);color:#fff;border-radius:26px;padding:60px 30px;text-align:center;box-shadow:var(--shadow-lg)}
+    .cta-band h2{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.5px}
+    .cta-band p{opacity:.92;font-size:18px;margin-top:14px;max-width:560px;margin-inline:auto}
+    .cta-band .btn{margin-top:30px;background:#fff;color:var(--primary-dark);box-shadow:0 10px 30px -10px rgba(0,0,0,.4)}
+    .cta-band .small{margin-top:16px;font-size:14px;opacity:.85}
+
+    /* footer */
+    footer{background:var(--ink);color:#cbd5e1;padding:54px 0 30px;margin-top:0}
+    .foot-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:30px}
+    footer .brand{color:#fff;margin-bottom:12px}
+    footer p,footer a{font-size:14px;color:#94a3b8}
+    footer a:hover{color:#fff}
+    footer h4{color:#fff;font-size:14px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+    footer ul{list-style:none;display:grid;gap:9px}
+    .foot-bottom{border-top:1px solid #1e293b;margin-top:36px;padding-top:22px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;font-size:13px;color:#64748b}
+    @media(max-width:760px){.foot-grid{grid-template-columns:1fr;gap:24px}}
+
+    /* legal modal */
+    .legal{position:fixed;inset:0;background:rgba(15,23,42,.6);display:none;z-index:100;padding:24px;overflow:auto}
+    .legal.open{display:grid;place-items:start center}
+    .legal .sheet{background:#fff;color:var(--ink);max-width:680px;width:100%;border-radius:18px;padding:34px;margin:40px 0}
+    .legal h3{font-size:22px;font-weight:800;margin-bottom:6px}
+    .legal h4{margin-top:18px;font-size:15px}
+    .legal p{color:var(--soft);font-size:14px;margin-top:6px;line-height:1.6}
+    .legal .x{float:right;border:none;background:none;font-size:26px;cursor:pointer;color:var(--soft);line-height:1}
+  </style>
+</head>
+<body>
+
+  <!-- ===================== NAV ===================== -->
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top"><span class="logo">🚀</span> [DEINE&nbsp;FIRMA]</a>
+      <nav class="nav-links">
+        <a class="link" href="#leistungen">Leistungen</a>
+        <a class="link" href="#ablauf">Ablauf</a>
+        <a class="link" href="#stimmen">Kundenstimmen</a>
+        <a class="link" href="#faq">FAQ</a>
+        <a class="btn btn-primary" href="formular.html">Erstgespräch sichern</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" id="top">
+    <div class="wrap">
+      <span class="pill"><span class="dot"></span> Aktuell freie Plätze für neue Partner</span>
+      <h1>Planbar mehr Kunden –<br /><span class="grad">ohne leere Versprechen.</span></h1>
+      <p class="lead">
+        [DEINE FIRMA] hilft [DEINE ZIELGRUPPE, z. B. Handwerksbetrieben &amp; Dienstleistern],
+        regelmäßig qualifizierte Anfragen zu gewinnen. Persönlich betreut, transparent gemessen,
+        ohne Knebelverträge.
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary" href="formular.html">Kostenloses Erstgespräch →</a>
+        <a class="btn btn-ghost" href="#leistungen">Wie es funktioniert</a>
+      </div>
+      <p class="reassure">🔒 100&nbsp;% unverbindlich · ⏱️ Antwort <b>innerhalb von 24&nbsp;Stunden</b> · 🇩🇪 Ansprechpartner aus Deutschland</p>
+    </div>
+  </section>
+
+  <!-- ===================== TRUST BAR ===================== -->
+  <div class="trustbar">
+    <div class="wrap">
+      <div class="trust-item"><span class="ic">⭐</span> [4,9]/5 aus [XX] Bewertungen</div>
+      <div class="trust-item"><span class="ic">🤝</span> [XX]+ betreute Kunden</div>
+      <div class="trust-item"><span class="ic">🔒</span> DSGVO-konform</div>
+      <div class="trust-item"><span class="ic">📍</span> [DEIN STANDORT]</div>
+      <div class="trust-item"><span class="ic">✅</span> Echte Ansprechpartner, kein Callcenter</div>
+    </div>
+  </div>
+
+  <!-- ===================== STATS ===================== -->
+  <section class="block wrap">
+    <div class="eyebrow">Ergebnisse, die zählen</div>
+    <h2 class="h2">Zahlen, hinter denen wir stehen</h2>
+    <p class="sub">Ersetze diese Werte durch deine echten Ergebnisse – nichts schafft mehr Vertrauen als konkrete Zahlen.</p>
+    <div class="stats">
+      <div class="stat"><div class="num">[120+]</div><div class="cap">generierte Anfragen / Monat</div></div>
+      <div class="stat"><div class="num">[40+]</div><div class="cap">zufriedene Kunden</div></div>
+      <div class="stat"><div class="num">[24h]</div><div class="cap">durchschnittliche Reaktionszeit</div></div>
+      <div class="stat"><div class="num">[4,9★]</div><div class="cap">Kundenbewertung</div></div>
+    </div>
+  </section>
+
+  <!-- ===================== LEISTUNGEN ===================== -->
+  <section class="block wrap" id="leistungen">
+    <div class="eyebrow">Was wir tun</div>
+    <h2 class="h2">Alles, damit du dich aufs Geschäft konzentrierst</h2>
+    <p class="sub">Wir kümmern uns um die Kundengewinnung – du kümmerst dich um deine Kunden.</p>
+    <div class="grid3">
+      <div class="feat"><div class="ic">🎯</div><h3>Passgenaue Zielgruppe</h3><p>Wir sprechen genau die Menschen an, die dein Angebot wirklich brauchen – keine Streuverluste.</p></div>
+      <div class="feat"><div class="ic">✉️</div><h3>Persönliche Ansprache</h3><p>Echte, individuelle Nachrichten statt Massen-Spam. Seriös, ehrlich und auf Augenhöhe.</p></div>
+      <div class="feat"><div class="ic">📊</div><h3>Volle Transparenz</h3><p>Du siehst jederzeit, was läuft: Anfragen, Termine und Ergebnisse – klar und nachvollziehbar.</p></div>
+      <div class="feat"><div class="ic">🤝</div><h3>Persönliche Betreuung</h3><p>Ein fester Ansprechpartner, den du anrufen kannst. Kein anonymes Ticketsystem.</p></div>
+      <div class="feat"><div class="ic">🔒</div><h3>DSGVO &amp; Datenschutz</h3><p>Deine Daten und die deiner Kontakte werden vertraulich und rechtskonform behandelt.</p></div>
+      <div class="feat"><div class="ic">🚀</div><h3>Schneller Start</h3><p>Vom Erstgespräch bis zu den ersten Anfragen vergehen oft nur wenige Tage.</p></div>
+    </div>
+  </section>
+
+  <!-- ===================== ABLAUF ===================== -->
+  <section class="block wrap" id="ablauf">
+    <div class="eyebrow">So einfach geht's</div>
+    <h2 class="h2">In 3 Schritten zu neuen Kunden</h2>
+    <div class="steps">
+      <div class="step"><div class="no">1</div><h3>Kostenloses Erstgespräch</h3><p>Wir lernen dein Business kennen und prüfen ehrlich, ob und wie wir helfen können – unverbindlich.</p></div>
+      <div class="step"><div class="no">2</div><h3>Strategie &amp; Start</h3><p>Wir entwickeln deine Ansprache, definieren die Zielgruppe und starten die Kampagne für dich.</p></div>
+      <div class="step"><div class="no">3</div><h3>Anfragen kommen rein</h3><p>Qualifizierte Interessenten melden sich bei dir. Du führst die Gespräche, wir optimieren laufend.</p></div>
+    </div>
+    <div style="text-align:center;margin-top:40px">
+      <a class="btn btn-primary" href="formular.html">Jetzt Erstgespräch vereinbaren →</a>
+    </div>
+  </section>
+
+  <!-- ===================== KUNDENSTIMMEN ===================== -->
+  <section class="block wrap" id="stimmen">
+    <div class="eyebrow">Kundenstimmen</div>
+    <h2 class="h2">Das sagen unsere Partner</h2>
+    <p class="sub">Tausche diese Beispiele gegen echte Stimmen deiner Kunden aus – am besten mit Name &amp; Firma.</p>
+    <div class="quotes">
+      <div class="quote">
+        <div class="stars">★★★★★</div>
+        <p>„Endlich kommen regelmäßig Anfragen rein, ohne dass ich mich selbst darum kümmern muss. Sehr professionell und transparent."</p>
+        <div class="who"><div class="ava">MM</div><div><div class="n">[Max Mustermann]</div><div class="r">[Geschäftsführer, Muster GmbH]</div></div></div>
+      </div>
+      <div class="quote">
+        <div class="stars">★★★★★</div>
+        <p>„Was mich überzeugt hat: kein leeres Marketing-Gerede, sondern echte Ergebnisse und ein fester Ansprechpartner."</p>
+        <div class="who"><div class="ava">SK</div><div><div class="n">[Sandra Klein]</div><div class="r">[Inhaberin, Beispiel e.K.]</div></div></div>
+      </div>
+      <div class="quote">
+        <div class="stars">★★★★★</div>
+        <p>„Schnelle Umsetzung, ehrliche Beratung und spürbar mehr Termine im Kalender. Klare Empfehlung."</p>
+        <div class="who"><div class="ava">TB</div><div><div class="n">[Thomas Bauer]</div><div class="r">[Geschäftsführer, Bauer &amp; Co.]</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== ÜBER MICH ===================== -->
+  <section class="about">
+    <div class="block wrap about-grid">
+      <div class="about-photo">👤</div>
+      <div>
+        <div class="eyebrow" style="text-align:left">Wer dahinter steht</div>
+        <h2>Hi, ich bin [DEIN NAME] 👋</h2>
+        <p>
+          [Ersetze diesen Text durch deine echte Geschichte: Wer bist du, warum machst du das,
+          und warum kann man dir vertrauen? Ein, zwei ehrliche Sätze über deine Erfahrung und
+          deinen Anspruch wirken Wunder. Tipp: Lade unten ein echtes Foto von dir hoch – das
+          schafft am meisten Vertrauen bei Cold-Mail-Empfängern.]
+        </p>
+        <p>
+          Mein Versprechen an dich: ehrliche Beratung, klare Kommunikation und nur dann eine
+          Zusammenarbeit, wenn ich dir wirklich helfen kann.
+        </p>
+        <div class="sig">[Dein Name]<span>Gründer, [Deine Firma]</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ ===================== -->
+  <section class="block wrap" id="faq">
+    <div class="eyebrow">Häufige Fragen</div>
+    <h2 class="h2">Das fragen sich viele zuerst</h2>
+    <div class="faq">
+      <details open>
+        <summary>Ist das Erstgespräch wirklich kostenlos?</summary>
+        <div class="ans">Ja. Das Erstgespräch ist komplett kostenlos und unverbindlich. Wir schauen gemeinsam, ob eine Zusammenarbeit überhaupt Sinn ergibt – ganz ohne Verkaufsdruck.</div>
+      </details>
+      <details>
+        <summary>Bin ich an einen langen Vertrag gebunden?</summary>
+        <div class="ans">[Passe das an deine Konditionen an.] Wir setzen auf faire, transparente Vereinbarungen statt langer Knebelverträge. Die genauen Konditionen besprechen wir offen im Erstgespräch.</div>
+      </details>
+      <details>
+        <summary>Woher weiß ich, dass ihr seriös seid?</summary>
+        <div class="ans">Gute Frage – und genau richtig, das zu prüfen. Du findest hier echte Kundenstimmen, einen festen Ansprechpartner mit Namen, ein vollständiges Impressum und unsere Datenschutzerklärung. Im Erstgespräch sprichst du direkt mit einer realen Person.</div>
+      </details>
+      <details>
+        <summary>Wie schnell sehe ich erste Ergebnisse?</summary>
+        <div class="ans">Das hängt von deiner Branche ab. In vielen Fällen kommen die ersten Anfragen schon innerhalb der ersten [Wochen]. Wir sind dabei ehrlich und versprechen nichts, was wir nicht halten können.</div>
+      </details>
+      <details>
+        <summary>Was passiert mit meinen Daten?</summary>
+        <div class="ans">Deine Daten werden ausschließlich zur Kontaktaufnahme genutzt, vertraulich behandelt und nicht weitergegeben. Details findest du in unserer <a href="#" onclick="openLegal('datenschutz');return false" style="color:var(--primary);font-weight:600">Datenschutzerklärung</a>.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ===================== FINAL CTA ===================== -->
+  <section class="block wrap">
+    <div class="cta-band">
+      <h2>Lass uns 15 Minuten sprechen.</h2>
+      <p>Unverbindlich, ehrlich und ohne Verkaufsdruck. Wir sagen dir offen, ob wir dir helfen können.</p>
+      <a class="btn" href="formular.html">Kostenloses Erstgespräch sichern →</a>
+      <div class="small">🔒 Deine Daten werden vertraulich behandelt.</div>
+    </div>
+  </section>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <div class="brand"><span class="logo">🚀</span> [DEINE FIRMA]</div>
+          <p>Wir helfen Unternehmen, planbar an neue Kunden zu kommen – persönlich, transparent und ohne leere Versprechen.</p>
+        </div>
+        <div>
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="#leistungen">Leistungen</a></li>
+            <li><a href="#ablauf">Ablauf</a></li>
+            <li><a href="#stimmen">Kundenstimmen</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="formular.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Kontakt &amp; Rechtliches</h4>
+          <ul>
+            <li><a href="mailto:[deine@email.de]">📧 [deine@email.de]</a></li>
+            <li><a href="tel:[+49...]">📞 [+49 …]</a></li>
+            <li><a href="#" onclick="openLegal('impressum');return false">Impressum</a></li>
+            <li><a href="#" onclick="openLegal('datenschutz');return false">Datenschutz</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <span>© <span id="year"></span> [DEINE FIRMA]. Alle Rechte vorbehalten.</span>
+        <span>Mit ❤️ für ehrliche Kundengewinnung gebaut.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===================== LEGAL MODAL (Impressum / Datenschutz) ===================== -->
+  <div class="legal" id="legal" onclick="if(event.target===this)closeLegal()">
+    <div class="sheet">
+      <button class="x" onclick="closeLegal()">×</button>
+      <!-- Impressum -->
+      <div id="legal-impressum">
+        <h3>Impressum</h3>
+        <p>Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz).</p>
+        <h4>Anbieter</h4>
+        <p>[Dein Name / Firmenname]<br/>[Straße &amp; Hausnummer]<br/>[PLZ &amp; Ort]<br/>Deutschland</p>
+        <h4>Kontakt</h4>
+        <p>Telefon: [+49 …]<br/>E-Mail: [deine@email.de]</p>
+        <h4>Vertreten durch</h4>
+        <p>[Name des Inhabers / Geschäftsführers]</p>
+        <h4>Umsatzsteuer-ID</h4>
+        <p>[USt-IdNr. gemäß § 27a UStG, falls vorhanden]</p>
+        <h4>Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</h4>
+        <p>[Name &amp; Anschrift wie oben]</p>
+        <p style="margin-top:18px"><em>Hinweis: Bitte lass dieses Impressum vor dem Livegang rechtlich prüfen – ein vollständiges, korrektes Impressum ist in Deutschland Pflicht und schafft Vertrauen.</em></p>
+      </div>
+      <!-- Datenschutz -->
+      <div id="legal-datenschutz" style="display:none">
+        <h3>Datenschutzerklärung</h3>
+        <p>Der Schutz deiner persönlichen Daten ist uns wichtig.</p>
+        <h4>Verantwortlicher</h4>
+        <p>[Dein Name / Firmenname], [Anschrift], [E-Mail].</p>
+        <h4>Erhebung von Daten über das Kontaktformular</h4>
+        <p>Wenn du uns über das Formular kontaktierst, verarbeiten wir die von dir angegebenen Daten (z. B. Name, E-Mail, Telefon, Nachricht) ausschließlich zur Bearbeitung deiner Anfrage. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b bzw. f DSGVO.</p>
+        <h4>Speicherung</h4>
+        <p>Deine Daten werden nur so lange gespeichert, wie es zur Bearbeitung deiner Anfrage erforderlich ist, und nicht an unbefugte Dritte weitergegeben.</p>
+        <h4>Deine Rechte</h4>
+        <p>Du hast jederzeit das Recht auf Auskunft, Berichtigung, Löschung und Widerspruch. Wende dich dazu an [deine@email.de].</p>
+        <p style="margin-top:18px"><em>Hinweis: Diese Datenschutzerklärung ist ein Platzhalter. Bitte vor dem Livegang von einer fachkundigen Stelle prüfen und ergänzen lassen.</em></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    function openLegal(which){
+      document.getElementById('legal-impressum').style.display   = which==='impressum'   ? 'block':'none';
+      document.getElementById('legal-datenschutz').style.display = which==='datenschutz' ? 'block':'none';
+      document.getElementById('legal').classList.add('open');
+      document.body.style.overflow='hidden';
+    }
+    function closeLegal(){
+      document.getElementById('legal').classList.remove('open');
+      document.body.style.overflow='';
+    }
+    document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeLegal(); });
+  </script>
+</body>
+</html>

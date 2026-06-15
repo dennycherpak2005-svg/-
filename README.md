@@ -5,6 +5,7 @@ Kein Build, keine Abhängigkeiten, kein Server nötig – einfach im Browser öf
 
 ## ✨ Funktionen
 
+- **Vertrauens-Landingpage** (`landing.html`) – öffentliche Startseite für Cold-Mail-Empfänger: Leistungen, Ergebnisse, Kundenstimmen, Ablauf, FAQ, Impressum & Datenschutz. CTA führt direkt aufs Formular.
 - **Öffentliches Lead-Formular** (`formular.html`) – neue Anfragen landen automatisch im CRM
 - **Dashboard** mit Live-Statistiken (Leads gesamt, neu, offen, gewonnen, Conversion-Rate)
 - **Pipeline-Board** mit 6 Stufen und **Drag & Drop** (Neu → Kontaktiert → Qualifiziert → Angebot → Gewonnen/Verloren)
@@ -20,9 +21,15 @@ Kein Build, keine Abhängigkeiten, kein Server nötig – einfach im Browser öf
 Einfach die Dateien öffnen:
 
 ```
+landing.html    → öffentliche Vertrauens-Landingpage (für Cold-Mail-Links)
 index.html      → das CRM-Dashboard
 formular.html   → das öffentliche Lead-Formular
 ```
+
+> 💡 **Tipp für Cold Mail:** Verlinke in deinen Mails auf `landing.html`. Empfänger,
+> die dich „checken", landen dann auf einer seriösen Seite mit echten Infos,
+> Kundenstimmen und Impressum – das baut Vertrauen auf und erhöht die Antwortrate.
+> Ersetze vorher alle Platzhalter in eckigen Klammern `[…]` durch deine echten Daten.
 
 Doppelklick auf `index.html` genügt. Optional lokal mit einem kleinen Webserver:
 
