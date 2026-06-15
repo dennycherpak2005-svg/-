@@ -5,7 +5,7 @@ Kein Build, keine Abhängigkeiten, kein Server nötig – einfach im Browser öf
 
 ## ✨ Funktionen
 
-- **Vertrauens-Landingpage** (`landing.html`) – öffentliche Startseite für Cold-Mail-Empfänger: Leistungen, Ergebnisse, Kundenstimmen, Ablauf, FAQ, Impressum & Datenschutz. CTA führt direkt aufs Formular.
+- **Demo-Landingpage** (`landing.html`) – Beispiel-Website mit integriertem **KI-Chatbot (Flowise)** zum Vorzeigen in Cold-Mails. Zeigt Vorteile, Chatbot-Showcase, Ablauf, FAQ, Impressum & Datenschutz. CTA führt direkt aufs Formular. Ehrlich als „Live-Demo" gekennzeichnet (keine erfundenen Kundenstimmen).
 - **Öffentliches Lead-Formular** (`formular.html`) – neue Anfragen landen automatisch im CRM
 - **Dashboard** mit Live-Statistiken (Leads gesamt, neu, offen, gewonnen, Conversion-Rate)
 - **Pipeline-Board** mit 6 Stufen und **Drag & Drop** (Neu → Kontaktiert → Qualifiziert → Angebot → Gewonnen/Verloren)
@@ -21,15 +21,25 @@ Kein Build, keine Abhängigkeiten, kein Server nötig – einfach im Browser öf
 Einfach die Dateien öffnen:
 
 ```
-landing.html    → öffentliche Vertrauens-Landingpage (für Cold-Mail-Links)
+landing.html    → Demo-Landingpage mit KI-Chatbot (für Cold-Mail-Links)
 index.html      → das CRM-Dashboard
 formular.html   → das öffentliche Lead-Formular
 ```
 
-> 💡 **Tipp für Cold Mail:** Verlinke in deinen Mails auf `landing.html`. Empfänger,
-> die dich „checken", landen dann auf einer seriösen Seite mit echten Infos,
-> Kundenstimmen und Impressum – das baut Vertrauen auf und erhöht die Antwortrate.
-> Ersetze vorher alle Platzhalter in eckigen Klammern `[…]` durch deine echten Daten.
+> 💡 **Tipp für Cold Mail:** Verlinke in deinen Mails auf `landing.html`. Empfänger
+> sehen dann ein lebendiges Beispiel inkl. funktionierendem KI-Chatbot – „so könnte
+> eure Seite aussehen". Ersetze vorher alle Platzhalter in eckigen Klammern `[…]`
+> durch deine echten Daten.
+
+### 🤖 Flowise-Chatbot einbinden
+
+Der Chatbot ist in `landing.html` bereits vorbereitet (unten im `<script type="module">`):
+
+1. In **Flowise** deinen Chatflow öffnen → **Embed / „</> Share Chatbot"**.
+2. Von dort **`chatflowid`** und **`apiHost`** kopieren und in `landing.html`
+   die Platzhalter `DEINE-CHATFLOW-ID` und `https://DEINEN-FLOWISE-HOST` ersetzen.
+3. Speichern – der Chat erscheint automatisch unten rechts. Farben & Begrüßung
+   sind schon passend zur Seite eingestellt.
 
 Doppelklick auf `index.html` genügt. Optional lokal mit einem kleinen Webserver:
 
