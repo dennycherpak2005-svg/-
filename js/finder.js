@@ -32,11 +32,12 @@ const BRANCHEN = [
 ];
 
 const NOMINATIM = "https://nominatim.openstreetmap.org/search";
-// Mehrere Overpass-Server – bei Überlastung wird automatisch der nächste probiert.
+// Overpass-Server mit CORS-Unterstützung zuerst (nur die funktionieren im Browser).
+// overpass-api.de hat CORS wenn gesund; maps.mail.ru ist ein zuverlässiger CORS-Fallback.
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
-  "https://overpass.private.coffee/api/interpreter",
 ];
 
 /* ---------- Finder-Konfig (gespeicherte Suchen + Auto) ---------- */
@@ -69,21 +70,28 @@ function buildOverpass(filters, box) {
   return `[out:json][timeout:25];\n(\n${lines}\n);\nout center tags 120;`;
 }
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function overpass(query) {
+  const body = "data=" + encodeURIComponent(query);
   let lastErr;
-  for (const url of OVERPASS_ENDPOINTS) {
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "data=" + encodeURIComponent(query),
-      });
-      if (!res.ok) { lastErr = new Error("Server " + res.status); continue; }
-      const data = await res.json();
-      return data.elements || [];
-    } catch (e) { lastErr = e; }
+  // 2 Runden: bei kurzzeitiger Überlastung (429/504) nochmal probieren.
+  for (let round = 0; round < 2; round++) {
+    for (const url of OVERPASS_ENDPOINTS) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        });
+        if (!res.ok) { lastErr = new Error("Server " + res.status); continue; }
+        const data = await res.json();
+        return data.elements || [];
+      } catch (e) { lastErr = e; }
+    }
+    if (round === 0) await sleep(2500); // kurz warten, dann zweite Runde
   }
-  throw new Error("Alle Daten-Server gerade überlastet – in ein paar Minuten erneut versuchen");
+  throw new Error("Daten-Server gerade überlastet – bitte 1–2 Minuten warten und erneut suchen");
 }
 
 /** OSM-Element → Lead. */
