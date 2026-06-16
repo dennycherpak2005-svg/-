@@ -394,43 +394,13 @@
   </script>
 
   <!-- ============================================================
-       FLOWISE CHATBOT  🤖
+       EIGENER KI-CHATBOT  🤖  (mit Termin-Formular IM Chat)
        ------------------------------------------------------------
-       SO BAUST DU DEINEN CHATBOT EIN (2 Schritte):
-       1) In Flowise deinen Chatflow öffnen → oben rechts auf
-          "Embed" / "</> Share Chatbot".
-       2) Kopiere von dort "chatflowid" und "apiHost" und trage sie
-          unten ein (ersetze DEINE-CHATFLOW-ID und DEINEN-FLOWISE-HOST).
-       Danach erscheint der Chat automatisch unten rechts.
-       Farben/Texte sind schon passend zur Seite vorbereitet.
+       Läuft sofort im DEMO-MODUS zum Vorzeigen.
+       Für die echte KI: in js/chatbot.js oben "apiHost" und
+       "chatflowid" eintragen (aus Flowise → "</> Embed").
        ============================================================ -->
-  <script type="module">
-    import Chatbot from "https://cdn.jsdelivr.net/npm/flowise-embed/dist/web.js";
-    Chatbot.init({
-      chatflowid: "DEINE-CHATFLOW-ID",
-      apiHost: "https://DEINEN-FLOWISE-HOST",
-      theme: {
-        button: {
-          backgroundColor: "#4f46e5",
-          right: 20, bottom: 20, size: 56,
-          iconColor: "white",
-          customIconSrc: "https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/svg/google-messages.svg"
-        },
-        chatWindow: {
-          welcomeMessage: "Hallo! 👋 Ich bin dein KI-Assistent. Wie kann ich dir helfen?",
-          title: "Dein KI-Assistent",
-          titleBackgroundColor: "#4f46e5",
-          backgroundColor: "#ffffff",
-          height: 560, width: 380, fontSize: 15,
-          botMessage:  { backgroundColor: "#f8fafc", textColor: "#0f172a" },
-          userMessage: { backgroundColor: "#4f46e5", textColor: "#ffffff" },
-          textInput: {
-            placeholder: "Schreib deine Frage…",
-            sendButtonColor: "#4f46e5"
-          }
-        }
-      }
-    });
-  </script>
+  <script src="js/store.js"></script>
+  <script src="js/chatbot.js"></script>
 </body>
 </html>
