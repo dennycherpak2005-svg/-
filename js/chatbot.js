@@ -52,7 +52,9 @@
   .dccb-head .t { font-weight: 700; font-size: 15px; line-height: 1.2; }
   .dccb-head .s { font-size: 12px; opacity: .9; display:flex; align-items:center; gap:6px; }
   .dccb-head .s::before { content:""; width:7px; height:7px; border-radius:50%; background:#4ade80; }
-  .dccb-head .x { margin-left:auto; background:none; border:none; color:#fff; font-size:24px; cursor:pointer; line-height:1; opacity:.85; }
+  .dccb-head .tb { margin-left:auto; background:rgba(255,255,255,.22); border:none; color:#fff; font-size:12.5px; font-weight:700; cursor:pointer; border-radius:20px; padding:7px 12px; white-space:nowrap; }
+  .dccb-head .tb:hover { background:rgba(255,255,255,.34); }
+  .dccb-head .x { background:none; border:none; color:#fff; font-size:24px; cursor:pointer; line-height:1; opacity:.85; padding:0 2px; }
   .dccb-head .x:hover { opacity:1; }
   .dccb-body { flex:1; overflow-y:auto; padding: 16px; background:#f8fafc; display:flex; flex-direction:column; gap:10px; }
   .dccb-msg { max-width: 82%; padding: 10px 14px; border-radius: 16px; font-size: 14.5px; line-height:1.45; white-space: pre-wrap; word-wrap: break-word; }
@@ -102,6 +104,7 @@
           <div class="t">${CFG.title}</div>
           <div class="s">${CFG.subtitle}</div>
         </div>
+        <button class="tb" id="dccb-termin-btn" title="Termin anfragen" aria-label="Termin anfragen">📅 Termin</button>
         <button class="x" id="dccb-close" aria-label="Schließen">×</button>
       </div>
       <div class="dccb-body" id="dccb-body"></div>
@@ -118,7 +121,11 @@
   const quick = root.querySelector("#dccb-quick");
   const input = root.querySelector("#dccb-text");
   let started = false;
+  let formOpen = false; // verhindert doppelte Formulare
   let sessionId = "web-" + Math.random().toString(36).slice(2);
+
+  // Termin-Absicht erkennt das Widget SELBST – unabhängig von der KI.
+  const INTEREST_RE = /(termin|beratung|rückruf|ruckruf|zurückrufen|reparatur|sanierung|schaden|undicht|sturm|wasser|angebot|kostenvoranschlag|interesse|eindeck|besichtig|vorbeikomm|anfrage)/i;
 
   /* ====== 5) Hilfsfunktionen ================================= */
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
@@ -155,20 +162,37 @@
     setTimeout(() => { addMsg(CFG.welcome, "bot"); setQuick(CFG.quickReplies); }, 250);
   }
 
+  // Öffnet das Formular garantiert (egal ob KI oder nicht) – nur einmal.
+  function openForm(intro) {
+    if (formOpen) return;
+    if (intro) addMsg(intro, "bot");
+    renderForm();
+  }
+
   function handleUser(text) {
     text = (text || "").trim(); if (!text) return;
+
+    // Direkter Wunsch übers Formular (Button/Quick-Reply): nicht an die KI schicken.
+    if (/^📅?\s*termin\s*anfragen$/i.test(text)) {
+      addMsg(text, "user"); setQuick([]);
+      openForm("Sehr gern! Bitte tragen Sie hier kurz Ihre Daten ein, dann melden wir uns zeitnah bei Ihnen.");
+      return;
+    }
+
     addMsg(text, "user");
     setQuick([]);
+    const wantsForm = INTEREST_RE.test(text); // Widget erkennt Absicht selbst
     const typing = showTyping();
     botRespond(text).then((reply) => {
       hideTyping();
-      let showForm = false;
+      let showForm = wantsForm;
       if (reply && reply.includes(CFG.formMarker)) {
         showForm = true;
         reply = reply.replace(CFG.formMarker, "").trim();
       }
       if (reply) addMsg(reply, "bot");
-      if (showForm) renderForm();
+      if (showForm) openForm();
+      else setQuick(["📅 Termin anfragen"]); // immer mit einem Klick erreichbar
     });
   }
 
@@ -207,6 +231,8 @@
 
   /* ====== 7) In-Chat Formular ================================ */
   function renderForm() {
+    formOpen = true;
+    setQuick([]);
     const wrap = document.createElement("div");
     wrap.className = "dccb-form";
     const today = new Date().toISOString().split("T")[0];
@@ -256,6 +282,7 @@
 
     wrap.querySelector("#dccb-termin").addEventListener("submit", (e) => {
       e.preventDefault();
+      formOpen = false; // weitere Anfragen wieder möglich
       const v = Object.fromEntries(new FormData(e.target).entries());
 
       // Ins CRM speichern (falls store.js eingebunden ist)
@@ -293,6 +320,11 @@
   /* ====== 8) Events ========================================== */
   root.querySelector("#dccb-btn").onclick = () => { win.classList.toggle("open"); start(); if (win.classList.contains("open")) input.focus(); };
   root.querySelector("#dccb-close").onclick = () => win.classList.remove("open");
+  // Fester Termin-Button im Header → Formular immer mit einem Klick
+  root.querySelector("#dccb-termin-btn").onclick = () => {
+    start();
+    openForm("Sehr gern! Bitte tragen Sie hier kurz Ihre Daten ein, dann melden wir uns zeitnah bei Ihnen.");
+  };
   root.querySelector("#dccb-inputbar").addEventListener("submit", (e) => {
     e.preventDefault(); const t = input.value; input.value = ""; handleUser(t);
   });
