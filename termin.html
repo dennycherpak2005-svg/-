@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Termin anfragen · Dachdeckerbetrieb</title>
+  <meta name="description" content="Fordern Sie unkompliziert einen Beratungstermin oder Rückruf an – wir melden uns zeitnah bei Ihnen." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📅</text></svg>" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+      min-height: 100vh; display: grid; place-items: center; padding: 24px; color: #0f172a;
+    }
+    .wrap { width: 100%; max-width: 560px; }
+    .card {
+      background: #fff; border-radius: 22px; padding: 36px;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,.4);
+    }
+    .head { text-align: center; margin-bottom: 26px; }
+    .head .emoji { font-size: 44px; }
+    .head h1 { font-size: 26px; font-weight: 800; margin-top: 8px; }
+    .head p { color: #64748b; margin-top: 6px; font-size: 15px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .field label .req { color: #db2777; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 12px 14px; border: 1px solid #e2e8f0; border-radius: 12px;
+      font-size: 15px; font-family: inherit; transition: border .15s, box-shadow .15s; background: #fff;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px #eef2ff;
+    }
+    .field textarea { resize: vertical; min-height: 84px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .hours {
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 12px 14px; font-size: 13px; color: #475569; margin-bottom: 18px;
+    }
+    .hours b { color: #0f172a; }
+    .hours ul { margin: 6px 0 0 18px; }
+    .submit {
+      width: 100%; padding: 14px; border: none; border-radius: 12px; margin-top: 8px;
+      background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #fff;
+      font-size: 16px; font-weight: 700; cursor: pointer; transition: transform .08s, filter .15s;
+    }
+    .submit:hover { filter: brightness(1.07); }
+    .submit:active { transform: scale(.98); }
+    .privacy { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 16px; }
+    .privacy a { color: #4f46e5; text-decoration: none; }
+    /* Erfolg */
+    .success { text-align: center; padding: 20px 0; display: none; }
+    .success.show { display: block; animation: pop .3s ease; }
+    .success .check {
+      width: 76px; height: 76px; border-radius: 50%; background: #dcfce7; color: #16a34a;
+      display: grid; place-items: center; font-size: 40px; margin: 0 auto 18px;
+    }
+    .success h2 { font-size: 22px; font-weight: 800; }
+    .success p { color: #64748b; margin-top: 8px; }
+    .success .recap {
+      text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 14px 16px; margin: 18px 0; font-size: 14px;
+    }
+    .success .recap div { margin: 3px 0; }
+    .success .recap b { color: #0f172a; }
+    .success button {
+      margin-top: 6px; padding: 11px 22px; border: 1px solid #e2e8f0; border-radius: 12px;
+      background: #fff; font-weight: 600; cursor: pointer; font-size: 14px;
+    }
+    @keyframes pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+    @media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } .card { padding: 26px; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <!-- Formular -->
+      <form id="termin-form">
+        <div class="head">
+          <div class="emoji">📅</div>
+          <h1>Beratungstermin anfragen</h1>
+          <p>Tragen Sie kurz Ihre Daten ein – wir melden uns zeitnah bei Ihnen.</p>
+        </div>
+
+        <div class="hours">
+          🕖 <b>Unsere Öffnungszeiten:</b>
+          <ul>
+            <li>Montag bis Freitag</li>
+            <li>7:00 – 18:00 Uhr</li>
+          </ul>
+        </div>
+
+        <div class="field">
+          <label>Name <span class="req">*</span></label>
+          <input name="name" required placeholder="Max Mustermann" />
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Wunschdatum <span class="req">*</span></label>
+            <input name="datum" type="date" required />
+          </div>
+          <div class="field">
+            <label>Wunschuhrzeit</label>
+            <input name="uhrzeit" type="time" min="07:00" max="18:00" step="900" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Anliegen <span class="req">*</span></label>
+          <select name="anliegen" required>
+            <option value="" disabled selected>Bitte auswählen…</option>
+            <option>Dachreparatur</option>
+            <option>Dachsanierung</option>
+            <option>Neueindeckung</option>
+            <option>Wartung / Dachcheck</option>
+            <option>Notfall / Sturm- oder Wasserschaden</option>
+            <option>Allgemeine Beratung</option>
+            <option>Sonstiges</option>
+          </select>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Telefon <span class="req">*</span></label>
+            <input name="phone" required placeholder="+49 …" />
+          </div>
+          <div class="field">
+            <label>E-Mail <span class="req">*</span></label>
+            <input name="email" type="email" required placeholder="max@mail.de" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Nachricht (optional)</label>
+          <textarea name="nachricht" placeholder="Beschreiben Sie kurz Ihr Anliegen…"></textarea>
+        </div>
+
+        <button class="submit" type="submit">Termin anfragen →</button>
+        <div class="privacy">🔒 Ihre Angaben werden vertraulich behandelt und nur zur Bearbeitung Ihrer Anfrage genutzt.</div>
+      </form>
+
+      <!-- Erfolgsmeldung -->
+      <div class="success" id="success">
+        <div class="check">✓</div>
+        <h2>Vielen Dank für Ihre Anfrage!</h2>
+        <p>Bitte prüfen Sie Ihre E-Mails – dort erhalten Sie zeitnah eine Terminbestätigung oder eine Rückmeldung mit weiteren Informationen.</p>
+        <div class="recap" id="recap"></div>
+        <button id="again">Weitere Anfrage senden</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store.js"></script>
+  <script>
+    const form = document.getElementById("termin-form");
+    const success = document.getElementById("success");
+    const recap = document.getElementById("recap");
+
+    // Datum frühestens heute
+    document.querySelector('input[name="datum"]').min = new Date().toISOString().split("T")[0];
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      const v = Object.fromEntries(fd.entries());
+
+      // Termin-Details lesbar in der Nachricht/Notiz bündeln, damit sie im CRM sichtbar sind
+      const details =
+        `Anliegen: ${v.anliegen}\n` +
+        `Wunschtermin: ${v.datum}${v.uhrzeit ? " um " + v.uhrzeit + " Uhr" : ""}\n` +
+        (v.nachricht ? `Nachricht: ${v.nachricht}` : "");
+
+      Store.addLead({
+        name: v.name,
+        email: v.email,
+        phone: v.phone,
+        message: details,
+        source: "Chatbot – Terminanfrage",
+        stage: "neu",
+      });
+
+      recap.innerHTML =
+        `<div><b>Name:</b> ${v.name}</div>` +
+        `<div><b>Anliegen:</b> ${v.anliegen}</div>` +
+        `<div><b>Wunschtermin:</b> ${v.datum}${v.uhrzeit ? " um " + v.uhrzeit + " Uhr" : ""}</div>` +
+        `<div><b>Telefon:</b> ${v.phone}</div>` +
+        `<div><b>E-Mail:</b> ${v.email}</div>`;
+
+      form.style.display = "none";
+      success.classList.add("show");
+      form.reset();
+    });
+
+    document.getElementById("again").addEventListener("click", () => {
+      success.classList.remove("show");
+      form.style.display = "block";
+    });
+  </script>
+</body>
+</html>
