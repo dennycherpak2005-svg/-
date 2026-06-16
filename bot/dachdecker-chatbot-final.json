@@ -519,7 +519,7 @@
           "frequencyPenalty": "",
           "presencePenalty": "",
           "timeout": "",
-          "strictToolCalling": true,
+          "strictToolCalling": "",
           "stopSequence": "",
           "basepath": "",
           "proxyUrl": "",
