@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DC Marketing & Automation · KI-Chatbots & maßgeschneiderte Automation</title>
+  <meta name="description" content="DC Marketing & Automation baut KI-Chatbots und maßgeschneiderte Automationen, die rund um die Uhr Anfragen entgegennehmen, Termine buchen und keinen Kunden mehr verpassen." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #07070d;
+      --bg-2:      #0c0c16;
+      --surface:   rgba(255,255,255,.04);
+      --border:    rgba(255,255,255,.09);
+      --text:      #f5f6fb;
+      --muted:     #9aa3b8;
+      --primary:   #6366f1;
+      --primary-2: #8b5cf6;
+      --accent:    #22d3ee;
+      --radius:    18px;
+      --maxw:      1140px;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .brand { font-family: 'Sora', sans-serif; letter-spacing: -.02em; line-height: 1.1; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+    .grad-text {
+      background: linear-gradient(110deg, #a5b4fc, #c4b5fd 40%, var(--accent));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* ===== Ambient background glows ===== */
+    .glow { position: fixed; border-radius: 50%; filter: blur(120px); opacity: .5; z-index: 0; pointer-events: none; }
+    .glow.a { width: 520px; height: 520px; background: #4f46e5; top: -160px; left: -120px; }
+    .glow.b { width: 460px; height: 460px; background: #7c3aed; top: 380px; right: -160px; opacity:.4; }
+    .glow.c { width: 420px; height: 420px; background: #0e7490; bottom: -160px; left: 30%; opacity:.3; }
+
+    /* ===== Nav ===== */
+    header.nav {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: blur(14px);
+      background: rgba(7,7,13,.6);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 70px; }
+    .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 18px; }
+    .brand .mark {
+      width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2));
+      font-size: 18px; box-shadow: 0 8px 24px -8px var(--primary);
+    }
+    .brand small { display:block; font-family:'Inter'; font-weight:500; font-size:11px; color:var(--muted); letter-spacing:.04em; }
+    .nav-links { display: flex; align-items: center; gap: 30px; }
+    .nav-links a { color: var(--muted); font-size: 14.5px; font-weight: 500; transition: color .2s; }
+    .nav-links a:hover { color: var(--text); }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px; cursor: pointer; border: none;
+      font-family: 'Inter'; font-weight: 600; font-size: 15px; border-radius: 12px;
+      padding: 12px 22px; transition: transform .15s, box-shadow .2s, background .2s;
+    }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; box-shadow: 0 12px 30px -10px var(--primary); }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 18px 40px -12px var(--primary); }
+    .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: rgba(255,255,255,.08); }
+    .nav .btn { padding: 10px 18px; font-size: 14px; }
+    .menu-toggle { display: none; background: none; border: none; color: var(--text); font-size: 26px; cursor: pointer; }
+
+    /* ===== Hero ===== */
+    section { position: relative; z-index: 1; }
+    .hero { padding: 90px 0 80px; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+      color: #c7d2fe; background: rgba(99,102,241,.12); border: 1px solid rgba(99,102,241,.3);
+      padding: 7px 14px; border-radius: 100px; margin-bottom: 26px;
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+    .hero h1 { font-size: clamp(34px, 5vw, 54px); font-weight: 800; margin-bottom: 22px; }
+    .hero p.lead { font-size: 18.5px; color: var(--muted); max-width: 540px; margin-bottom: 34px; }
+    .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 34px; }
+    .trust { display: flex; gap: 26px; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+    .trust span { display: flex; align-items: center; gap: 8px; }
+    .trust .ok { color: var(--accent); font-weight: 700; }
+
+    /* ===== Hero visual (chat mock) ===== */
+    .visual { position: relative; }
+    .chat-card {
+      background: linear-gradient(160deg, rgba(20,20,32,.95), rgba(12,12,22,.95));
+      border: 1px solid var(--border); border-radius: 22px; padding: 18px;
+      box-shadow: 0 40px 80px -30px rgba(0,0,0,.8); backdrop-filter: blur(10px);
+    }
+    .chat-head { display: flex; align-items: center; gap: 11px; padding: 4px 6px 16px; border-bottom: 1px solid var(--border); }
+    .chat-head .av { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-2)); display: grid; place-items: center; font-size: 19px; }
+    .chat-head b { font-size: 14.5px; }
+    .chat-head .stat { font-size: 12px; color: #4ade80; display: flex; align-items: center; gap: 6px; }
+    .chat-head .stat::before { content:""; width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px #4ade80; }
+    .bubbles { display: flex; flex-direction: column; gap: 10px; padding: 18px 6px 6px; }
+    .b { max-width: 80%; padding: 11px 15px; border-radius: 15px; font-size: 14px; line-height: 1.5; }
+    .b.bot  { background: rgba(255,255,255,.06); border: 1px solid var(--border); border-bottom-left-radius: 4px; align-self: flex-start; }
+    .b.user { background: linear-gradient(135deg, var(--primary), var(--primary-2)); border-bottom-right-radius: 4px; align-self: flex-end; }
+    .b.form { align-self: stretch; max-width: 100%; background: rgba(255,255,255,.03); border:1px dashed rgba(255,255,255,.16); display:flex; flex-direction:column; gap:7px; }
+    .b.form .row { height: 30px; border-radius: 8px; background: rgba(255,255,255,.05); border:1px solid var(--border); }
+    .b.form .sub { height: 32px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); margin-top:4px; }
+    .float-badge {
+      position: absolute; display: flex; align-items: center; gap: 10px;
+      background: rgba(12,12,22,.9); border: 1px solid var(--border); border-radius: 14px;
+      padding: 12px 15px; box-shadow: 0 20px 40px -16px rgba(0,0,0,.7); backdrop-filter: blur(8px);
+    }
+    .float-badge .ic { width: 34px; height: 34px; border-radius: 9px; display:grid; place-items:center; font-size:17px; }
+    .float-badge b { font-size: 15px; display:block; } .float-badge small { color: var(--muted); font-size: 12px; }
+    .fb-1 { top: -22px; right: -10px; } .fb-1 .ic { background: rgba(34,211,238,.15); }
+    .fb-2 { bottom: -24px; left: -18px; } .fb-2 .ic { background: rgba(74,222,128,.15); }
+
+    /* ===== Section heading ===== */
+    .sec { padding: 80px 0; }
+    .sec-head { max-width: 680px; margin: 0 auto 54px; text-align: center; }
+    .sec-head .tag { color: var(--accent); font-weight: 600; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+    .sec-head h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 700; margin: 14px 0 16px; }
+    .sec-head p { color: var(--muted); font-size: 17px; }
+
+    /* ===== Problem strip ===== */
+    .problems { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+    .prob { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; }
+    .prob .em { font-size: 26px; } .prob h3 { font-size: 18px; margin: 12px 0 8px; }
+    .prob p { color: var(--muted); font-size: 14.5px; }
+
+    /* ===== Services ===== */
+    .cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; }
+    .card {
+      position: relative; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 30px; transition: transform .25s, border-color .25s, background .25s;
+      overflow: hidden;
+    }
+    .card::before { content:""; position:absolute; inset:0; background: radial-gradient(420px circle at top, rgba(99,102,241,.14), transparent 60%); opacity:0; transition:opacity .3s; }
+    .card:hover { transform: translateY(-6px); border-color: rgba(99,102,241,.4); }
+    .card:hover::before { opacity: 1; }
+    .card .ic { width: 50px; height: 50px; border-radius: 13px; display: grid; place-items: center; font-size: 23px; background: linear-gradient(135deg, rgba(99,102,241,.2), rgba(139,92,246,.2)); border: 1px solid rgba(99,102,241,.3); margin-bottom: 18px; }
+    .card h3 { font-size: 20px; margin-bottom: 10px; }
+    .card p { color: var(--muted); font-size: 14.5px; margin-bottom: 16px; }
+    .card ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+    .card li { font-size: 14px; color: #cbd2e0; display: flex; gap: 10px; align-items: flex-start; }
+    .card li::before { content: "✓"; color: var(--accent); font-weight: 800; }
+
+    /* ===== Process ===== */
+    .steps { display: grid; grid-template-columns: repeat(4,1fr); gap: 22px; counter-reset: s; }
+    .step { position: relative; padding: 28px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+    .step .n { counter-increment: s; font-family:'Sora'; font-weight: 800; font-size: 15px; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: linear-gradient(135deg, var(--primary), var(--primary-2)); margin-bottom: 16px; }
+    .step .n::before { content: "0" counter(s); }
+    .step h3 { font-size: 17px; margin-bottom: 8px; }
+    .step p { color: var(--muted); font-size: 14px; }
+
+    /* ===== Benefits / stats ===== */
+    .benefits { display: grid; grid-template-columns: 1.1fr .9fr; gap: 50px; align-items: center; }
+    .benefit-list { display: flex; flex-direction: column; gap: 22px; }
+    .benefit { display: flex; gap: 16px; }
+    .benefit .ic { flex: none; width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: rgba(255,255,255,.05); border: 1px solid var(--border); }
+    .benefit h3 { font-size: 17px; margin-bottom: 5px; }
+    .benefit p { color: var(--muted); font-size: 14.5px; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .stat-box { background: linear-gradient(160deg, rgba(99,102,241,.12), rgba(139,92,246,.06)); border: 1px solid rgba(99,102,241,.25); border-radius: var(--radius); padding: 26px; text-align: center; }
+    .stat-box .num { font-family: 'Sora'; font-weight: 800; font-size: 38px; }
+    .stat-box .lbl { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+
+    /* ===== CTA ===== */
+    .cta-band {
+      text-align: center; padding: 64px 40px; border-radius: 28px;
+      background: linear-gradient(135deg, rgba(99,102,241,.18), rgba(139,92,246,.12));
+      border: 1px solid rgba(139,92,246,.3); position: relative; overflow: hidden;
+    }
+    .cta-band h2 { font-size: clamp(26px, 3.5vw, 38px); margin-bottom: 14px; }
+    .cta-band p { color: var(--muted); font-size: 17px; max-width: 540px; margin: 0 auto 30px; }
+
+    /* ===== Footer ===== */
+    footer { border-top: 1px solid var(--border); padding: 50px 0 36px; margin-top: 80px; }
+    .foot-grid { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 30px; margin-bottom: 34px; }
+    .foot-grid p { color: var(--muted); font-size: 14px; max-width: 320px; margin-top: 14px; }
+    .foot-col h4 { font-size: 14px; margin-bottom: 14px; letter-spacing: .04em; }
+    .foot-col a { display: block; color: var(--muted); font-size: 14px; margin-bottom: 9px; transition: color .2s; }
+    .foot-col a:hover { color: var(--text); }
+    .copy { text-align: center; color: var(--muted); font-size: 13px; padding-top: 26px; border-top: 1px solid var(--border); }
+
+    /* ===== Reveal animation ===== */
+    .reveal { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+    .reveal.in { opacity: 1; transform: none; }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 900px) {
+      .hero-grid, .benefits { grid-template-columns: 1fr; }
+      .visual { order: -1; max-width: 440px; margin: 0 auto; }
+      .problems, .cards, .steps { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .menu-toggle { display: block; }
+      .nav-links.open { display: flex; position: absolute; top: 70px; left: 0; right: 0; flex-direction: column; gap: 0; background: var(--bg-2); border-bottom: 1px solid var(--border); padding: 10px 24px 20px; }
+      .nav-links.open a { padding: 12px 0; border-bottom: 1px solid var(--border); }
+      .nav-links.open .btn { margin-top: 12px; justify-content: center; }
+    }
+    @media (max-width: 560px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .hero { padding: 50px 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow a"></div><div class="glow b"></div><div class="glow c"></div>
+
+  <!-- ===== NAV ===== -->
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a href="#top" class="brand">
+        <span class="mark">⚡</span>
+        <span>DC Marketing<small>& Automation</small></span>
+      </a>
+      <nav class="nav-links" id="navLinks">
+        <a href="#leistungen">Leistungen</a>
+        <a href="#ablauf">Ablauf</a>
+        <a href="#vorteile">Vorteile</a>
+        <a href="#kontakt" class="btn btn-primary">Kostenloses Erstgespräch</a>
+      </nav>
+      <button class="menu-toggle" id="menuToggle" aria-label="Menü">☰</button>
+    </div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <section class="hero" id="top">
+    <div class="wrap hero-grid">
+      <div class="reveal">
+        <span class="pill"><span class="dot"></span> KI-Chatbots & maßgeschneiderte Automation</span>
+        <h1>Nie wieder eine Kundenanfrage <span class="grad-text">verpassen.</span></h1>
+        <p class="lead">Ich baue KI-Chatbots und automatisierte Abläufe, die rund um die Uhr Anfragen beantworten, Termine buchen und Ihre Kunden begeistern – während Sie sich auf Ihr Handwerk konzentrieren.</p>
+        <div class="hero-cta">
+          <a href="#kontakt" class="btn btn-primary">Kostenloses Erstgespräch →</a>
+          <a href="#leistungen" class="btn btn-ghost">Wie funktioniert das?</a>
+        </div>
+        <div class="trust">
+          <span><span class="ok">✓</span> 24/7 erreichbar</span>
+          <span><span class="ok">✓</span> In Tagen startklar</span>
+          <span><span class="ok">✓</span> Komplett für Sie eingerichtet</span>
+        </div>
+      </div>
+
+      <div class="visual reveal">
+        <div class="chat-card">
+          <div class="chat-head">
+            <div class="av">🤖</div>
+            <div style="flex:1">
+              <b>Ihr KI-Assistent</b>
+              <div class="stat">Online · antwortet sofort</div>
+            </div>
+          </div>
+          <div class="bubbles">
+            <div class="b bot">Hallo! 👋 Wie kann ich Ihnen helfen?</div>
+            <div class="b user">Ich brauche einen Termin für eine Dachreparatur.</div>
+            <div class="b bot">Sehr gern! Tragen Sie kurz Ihre Daten ein:</div>
+            <div class="b form">
+              <div class="row"></div><div class="row"></div><div class="row"></div>
+              <div class="sub"></div>
+            </div>
+            <div class="b bot">Perfekt – Termin gebucht & Bestätigung ist unterwegs. ✅</div>
+          </div>
+        </div>
+        <div class="float-badge fb-1"><span class="ic">📅</span><div><b>Termin gebucht</b><small>automatisch im Kalender</small></div></div>
+        <div class="float-badge fb-2"><span class="ic">✉️</span><div><b>E-Mail raus</b><small>an Kunde & Chef</small></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROBLEM ===== -->
+  <section class="sec" id="warum">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="tag">Das Problem</span>
+        <h2>Jede verpasste Anfrage ist ein verlorener Auftrag</h2>
+        <p>Die meisten Interessenten melden sich nie wieder, wenn sie nicht sofort eine Antwort bekommen. Genau hier setzt Automation an.</p>
+      </div>
+      <div class="problems">
+        <div class="prob reveal"><div class="em">⏰</div><h3>Anfragen außerhalb der Zeiten</h3><p>Kunden schreiben abends und am Wochenende – wenn niemand am Telefon ist, sind sie weg.</p></div>
+        <div class="prob reveal"><div class="em">📝</div><h3>Zeitfresser Handarbeit</h3><p>Daten abtippen, Termine eintragen, Mails schreiben – jeden Tag dieselbe manuelle Arbeit.</p></div>
+        <div class="prob reveal"><div class="em">📉</div><h3>Kein Überblick</h3><p>Leads gehen in Notizen, Chats und Zetteln unter. Nachfassen? Vergessen.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SERVICES ===== -->
+  <section class="sec" id="leistungen">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="tag">Leistungen</span>
+        <h2>Was ich für Sie baue</h2>
+        <p>Keine Software von der Stange – sondern Lösungen, die genau zu Ihrem Betrieb passen.</p>
+      </div>
+      <div class="cards">
+        <div class="card reveal">
+          <div class="ic">🤖</div>
+          <h3>KI-Chatbots</h3>
+          <p>Ein digitaler Assistent auf Ihrer Website, der Fragen beantwortet und Interessenten in Kunden verwandelt.</p>
+          <ul>
+            <li>Beantwortet Fragen rund um die Uhr</li>
+            <li>Nimmt Termin- & Rückrufwünsche auf</li>
+            <li>Spricht im Stil Ihres Betriebs</li>
+          </ul>
+        </div>
+        <div class="card reveal">
+          <div class="ic">⚙️</div>
+          <h3>Maßgeschneiderte Automation</h3>
+          <p>Wiederkehrende Abläufe laufen vollautomatisch – von der Anfrage bis zur Bestätigung.</p>
+          <ul>
+            <li>Termine direkt im Kalender</li>
+            <li>Bestätigungs-Mails an Kunde & Chef</li>
+            <li>Leads automatisch dokumentiert</li>
+          </ul>
+        </div>
+        <div class="card reveal">
+          <div class="ic">🔗</div>
+          <h3>Integration & Anbindung</h3>
+          <p>Ich verbinde Ihre Tools, sodass alles nahtlos zusammenspielt – ohne doppelte Arbeit.</p>
+          <ul>
+            <li>Google Kalender & Tabellen</li>
+            <li>E-Mail & Messenger</li>
+            <li>Ihr bestehendes CRM</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROCESS ===== -->
+  <section class="sec" id="ablauf">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="tag">Ablauf</span>
+        <h2>In 4 Schritten startklar</h2>
+        <p>Unkompliziert und ohne technischen Aufwand für Sie.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><div class="n"></div><h3>Erstgespräch</h3><p>Wir klären kostenlos, wo Sie Zeit verlieren und was sich lohnt zu automatisieren.</p></div>
+        <div class="step reveal"><div class="n"></div><h3>Konzept</h3><p>Sie bekommen eine klare Lösung, zugeschnitten auf Ihren Betrieb.</p></div>
+        <div class="step reveal"><div class="n"></div><h3>Umsetzung</h3><p>Ich baue und richte alles ein – Sie müssen sich um nichts kümmern.</p></div>
+        <div class="step reveal"><div class="n"></div><h3>Start & Support</h3><p>Alles läuft live. Ich bleibe für Anpassungen an Ihrer Seite.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== BENEFITS ===== -->
+  <section class="sec" id="vorteile">
+    <div class="wrap benefits">
+      <div class="reveal">
+        <span class="tag" style="color:var(--accent);font-weight:600;font-size:13px;letter-spacing:.14em;text-transform:uppercase">Ihr Vorteil</span>
+        <h2 style="font-size:clamp(28px,4vw,38px);margin:14px 0 30px">Warum sich das für Sie auszahlt</h2>
+        <div class="benefit-list">
+          <div class="benefit"><div class="ic">🌙</div><div><h3>Erreichbar, wenn Sie schlafen</h3><p>Ihr Assistent arbeitet nachts, am Wochenende und an Feiertagen weiter.</p></div></div>
+          <div class="benefit"><div class="ic">⚡</div><div><h3>Mehr Zeit fürs Wesentliche</h3><p>Routine läuft automatisch – Sie konzentrieren sich auf Ihre Arbeit.</p></div></div>
+          <div class="benefit"><div class="ic">📈</div><div><h3>Mehr Abschlüsse</h3><p>Schnelle Antworten bedeuten mehr gewonnene Kunden.</p></div></div>
+          <div class="benefit"><div class="ic">✨</div><div><h3>Professioneller Auftritt</h3><p>Ein moderner, smarter Service hebt Sie von der Konkurrenz ab.</p></div></div>
+        </div>
+      </div>
+      <div class="stat-grid reveal">
+        <div class="stat-box"><div class="num grad-text">24/7</div><div class="lbl">erreichbar</div></div>
+        <div class="stat-box"><div class="num grad-text">&lt;1&nbsp;Min</div><div class="lbl">Reaktionszeit</div></div>
+        <div class="stat-box"><div class="num grad-text">100%</div><div class="lbl">automatisch erfasst</div></div>
+        <div class="stat-box"><div class="num grad-text">0</div><div class="lbl">verpasste Leads</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== CTA ===== -->
+  <section class="sec" id="kontakt">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>Lassen Sie uns Ihren Betrieb automatisieren</h2>
+        <p>Kostenloses, unverbindliches Erstgespräch. Wir schauen gemeinsam, was für Sie möglich ist.</p>
+        <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+          <a href="mailto:dcmarketing.automation@gmail.com" class="btn btn-primary">✉️ Jetzt anfragen</a>
+          <a href="tel:+4917641076995" class="btn btn-ghost">📞 017641076995</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="wrap">
+      <div class="foot-grid">
+        <div>
+          <a href="#top" class="brand"><span class="mark">⚡</span><span>DC Marketing<small>& Automation</small></span></a>
+          <p>KI-Chatbots und maßgeschneiderte Automation für Handwerk und Dienstleistung.</p>
+        </div>
+        <div class="foot-col">
+          <h4>Navigation</h4>
+          <a href="#leistungen">Leistungen</a>
+          <a href="#ablauf">Ablauf</a>
+          <a href="#vorteile">Vorteile</a>
+        </div>
+        <div class="foot-col">
+          <h4>Kontakt</h4>
+          <a href="mailto:dcmarketing.automation@gmail.com">dcmarketing.automation@gmail.com</a>
+          <a href="tel:+4917641076995">017641076995</a>
+        </div>
+      </div>
+      <div class="copy">© <span id="year"></span> DC Marketing & Automation. Alle Rechte vorbehalten.</div>
+    </div>
+  </footer>
+
+  <script>
+    // Jahr
+    document.getElementById('year').textContent = new Date().getFullYear();
+    // Mobile-Menü
+    const tgl = document.getElementById('menuToggle'), links = document.getElementById('navLinks');
+    tgl.addEventListener('click', () => links.classList.toggle('open'));
+    links.querySelectorAll('a').forEach(a => a.addEventListener('click', () => links.classList.remove('open')));
+    // Scroll-Reveal
+    const io = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { threshold: .12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  </script>
+
+  <!-- Live-Demo: dein eigener Chatbot direkt auf der Seite -->
+  <script src="js/chatbot.js"></script>
+</body>
+</html>
