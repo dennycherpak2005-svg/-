@@ -173,6 +173,23 @@
     .stat-box .num { font-family: 'Sora'; font-weight: 800; font-size: 38px; }
     .stat-box .lbl { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
 
+    /* ===== Showcase / Projekte ===== */
+    .showcase { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .demo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: transform .25s, border-color .25s; }
+    .demo:hover { transform: translateY(-6px); border-color: rgba(99,102,241,.4); }
+    .demo .bar { display: flex; align-items: center; gap: 11px; padding: 14px 16px; color: #fff; }
+    .demo .bar .av { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: rgba(255,255,255,.22); font-size: 16px; }
+    .demo .bar b { font-size: 14.5px; }
+    .demo .chat { padding: 18px 16px; display: flex; flex-direction: column; gap: 9px; background: #0c0c16; min-height: 210px; }
+    .demo .bb { max-width: 86%; padding: 9px 13px; border-radius: 13px; font-size: 13.5px; line-height: 1.45; }
+    .demo .bb.bot { background: rgba(255,255,255,.06); border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .demo .bb.user { align-self: flex-end; color: #fff; border-bottom-right-radius: 4px; }
+    .demo .cap { padding: 14px 16px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .demo .cap small { color: var(--muted); font-size: 12.5px; }
+    .demo .cap .live { font-size: 11px; font-weight: 700; color: #4ade80; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .demo .cap .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+    @media (max-width: 900px) { .showcase { grid-template-columns: 1fr; } }
+
     /* ===== CTA ===== */
     .cta-band {
       text-align: center; padding: 64px 40px; border-radius: 28px;
@@ -225,6 +242,7 @@
       <nav class="nav-links" id="navLinks">
         <a href="#leistungen">Leistungen</a>
         <a href="#ablauf">Ablauf</a>
+        <a href="#projekte">Projekte</a>
         <a href="#vorteile">Vorteile</a>
         <a href="#kontakt" class="btn btn-primary">Kostenloses Erstgespräch</a>
       </nav>
@@ -370,6 +388,50 @@
         <div class="stat-box"><div class="num grad-text">&lt;1&nbsp;Min</div><div class="lbl">Reaktionszeit</div></div>
         <div class="stat-box"><div class="num grad-text">100%</div><div class="lbl">automatisch erfasst</div></div>
         <div class="stat-box"><div class="num grad-text">0</div><div class="lbl">verpasste Leads</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROJEKTE / REFERENZEN ===== -->
+  <section class="sec" id="projekte">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <span class="tag">Projekte</span>
+        <h2>Bereits im Einsatz</h2>
+        <p>Maßgeschneiderte KI-Assistenten, die für meine Kunden täglich Anfragen entgegennehmen und Termine buchen.</p>
+      </div>
+      <div class="showcase">
+        <div class="demo reveal">
+          <div class="bar" style="background:linear-gradient(135deg,#c2562f,#9c421f)">
+            <span class="av">🔨</span><b>Müller Bot</b>
+            <span style="margin-left:auto;opacity:.85;font-size:12px">Meisterbetrieb</span>
+          </div>
+          <div class="chat">
+            <div class="bb bot">Hallo, wie kann ich helfen?</div>
+            <div class="bb user" style="background:#c2562f">Wer sind Sie?</div>
+            <div class="bb bot">Ich bin der digitale Erstberater des Dachdeckerbetriebs – ich helfe bei Fragen zu Leistungen, Ablauf und Terminen.</div>
+          </div>
+          <div class="cap">
+            <small>Dachdeckerbetrieb · Beratung & Terminanfragen</small>
+            <span class="live">Live</span>
+          </div>
+        </div>
+
+        <div class="demo reveal">
+          <div class="bar" style="background:linear-gradient(135deg,#1e2a44,#0f1830)">
+            <span class="av">🏢</span><b>ImmoRegion Assistent</b>
+            <span style="margin-left:auto;opacity:.85;font-size:12px">Immobilien</span>
+          </div>
+          <div class="chat">
+            <div class="bb bot">Willkommen 👋 Ich unterstütze Sie bei Kauf, Verkauf oder Besichtigungen.</div>
+            <div class="bb user" style="background:#1e2a44">Termin vereinbaren</div>
+            <div class="bb bot">Sehr gern! Nennen Sie mir kurz Vorname, Nachname, Telefon, E-Mail und Ihr Anliegen.</div>
+          </div>
+          <div class="cap">
+            <small>Immobilienmakler · Lead-Erfassung & Termine</small>
+            <span class="live">Live</span>
+          </div>
+        </div>
       </div>
     </div>
   </section>
