@@ -376,3 +376,28 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
 .kpi { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
 .kpi-v { font-size: 26px; font-weight: 800; }
 .kpi-l { font-size: 13px; font-weight: 600; }
+
+/* ============================================================
+   Dark Mode
+   ============================================================ */
+body.dark {
+  --surface: #1e293b;
+  --surface-2: #0f172a;
+  --border: #334155;
+  --text: #f1f5f9;
+  --text-soft: #94a3b8;
+  --primary-soft: #312e81;
+  --success-soft: #14532d;
+  --warning-soft: #422006;
+  --danger-soft: #450a0a;
+  --info-soft: #083344;
+  --shadow: 0 1px 3px rgba(0,0,0,.4);
+  --shadow-lg: 0 10px 25px -5px rgba(0,0,0,.6);
+  background: #0b1220;
+}
+body.dark .topbar input,
+body.dark .field input, body.dark .field select, body.dark .field textarea,
+body.dark .import-text, body.dark .goal-input, body.dark .note-add input { background: var(--surface-2); color: var(--text); }
+body.dark .chip { background: var(--surface-2); }
+body.dark .chip.active { background: var(--primary); border-color: var(--primary); color:#fff; }
+body.dark .n8n-pre { background: #020617; }

@@ -399,6 +399,7 @@ function callLead(id) {
 function openLead(id) {
   const lead = Store.getLead(id);
   if (!lead) return;
+  state.openLeadId = id; // für Tastatur-Kürzel
   const acts = (lead.activities || []).slice().reverse();
   const actIco = { mail: "📧", call: "📞", note: "📝", status: "🔄" };
   const optedOut = isOptedOut(lead); // nie automatisch anschreiben
@@ -621,7 +622,17 @@ function exportCSV() {
    Modal / Navigation
    ============================================================ */
 function openOverlay() { $("#overlay").classList.add("open"); }
-function closeModal() { $("#overlay").classList.remove("open"); }
+function closeModal() { $("#overlay").classList.remove("open"); state.openLeadId = null; }
+
+/* ---------- Dark Mode ---------- */
+function applyTheme(t) {
+  document.body.classList.toggle("dark", t === "dark");
+  const b = $("#theme-toggle"); if (b) b.textContent = t === "dark" ? "☀️" : "🌙";
+}
+function toggleTheme() {
+  const t = document.body.classList.contains("dark") ? "light" : "dark";
+  localStorage.setItem("leadcrm.theme", t); applyTheme(t);
+}
 
 const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", finder: "Lead-Finder", n8n: "n8n Versand", import: "Leads importieren", templates: "Mail-Vorlagen" };
 function switchView(view) {
@@ -863,7 +874,28 @@ $("#csv-file").addEventListener("change", (e) => {
   reader.readAsText(file);
 });
 $("#overlay").addEventListener("click", (e) => { if (e.target.id === "overlay") closeModal(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeModal(); return; }
+  const tag = (e.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select" || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if ($("#overlay").classList.contains("open")) {
+    // Kürzel im Lead-Detail (nur wenn die Detail-Ansicht offen ist)
+    const id = state.openLeadId;
+    if (!id || !$("#d-mail")) return;
+    if (k === "m" && !$("#d-mail").disabled) composeMail(id);
+    else if (k === "a" && !$("#d-call").disabled) callLead(id);
+    else if (k === "f" && $("#d-followup") && !$("#d-followup").disabled) pushToN8n([Store.getLead(id)], "followup");
+    else if (k === "e") editLead(id);
+    return;
+  }
+  // Globale Kürzel
+  if (e.key === "/") { e.preventDefault(); $("#global-search").focus(); }
+  else if (k === "n") newLead();
+  else if (k === "d") toggleTheme();
+});
+$("#theme-toggle").onclick = toggleTheme;
+applyTheme(localStorage.getItem("leadcrm.theme") || "light");
 let searchTimer = null;
 $("#global-search").addEventListener("input", (e) => {
   const v = e.target.value;
