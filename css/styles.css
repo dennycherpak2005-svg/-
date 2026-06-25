@@ -401,3 +401,10 @@ body.dark .import-text, body.dark .goal-input, body.dark .note-add input { backg
 body.dark .chip { background: var(--surface-2); }
 body.dark .chip.active { background: var(--primary); border-color: var(--primary); color:#fff; }
 body.dark .n8n-pre { background: #020617; }
+
+/* ---------- Branche-Performance ---------- */
+.bp-table { width: 100%; border-collapse: collapse; }
+.bp-table th { padding: 8px 10px; font-size: 11px; }
+.bp-table td { padding: 8px 10px; font-size: 13px; border-bottom: 1px solid var(--border); }
+.bp-table tbody tr { cursor: default; }
+.bp-table tbody tr:hover { background: var(--surface-2); }

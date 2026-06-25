@@ -58,6 +58,18 @@ function alreadyColdMailed(lead) {
 function isOptedOut(lead) {
   return lead.status === "abgelehnt" || lead.status === "kunde";
 }
+// Branche aus dem Quelle-Feld ableiten (z. B. "Finder: Restaurant · Ulm" -> "Restaurant").
+function brancheOf(lead) {
+  const s = (lead.source || "").trim();
+  let m = s.match(/^(?:Finder|Auto):\s*(.+?)\s*·/i);
+  if (m) return m[1].trim();
+  if (s.includes("·")) return s.split("·")[0].trim();
+  return s || "—";
+}
+// Hat geantwortet / Termin / Kunde = positive Reaktion.
+function hasResponded(lead) {
+  return ["geantwortet", "termin", "kunde"].includes(lead.status);
+}
 // Follow-up fällig? Nicht bei "Kein Interesse"/Kunde und nicht wenn schon eins raus ist.
 function followDue(lead) {
   if (!lead.nextFollowUp) return false;
@@ -174,6 +186,43 @@ function renderAnalytics() {
         <div class="kpi"><div class="kpi-v">${winRate}%</div><div class="kpi-l">Abschlussquote</div><div class="kpi-s muted small">${won} Kunden</div></div>
         <div class="kpi"><div class="kpi-v">${mailsWk + callsWk}</div><div class="kpi-l">Aktionen / 7 Tage</div><div class="kpi-s muted small">${mailsWk} Mails · ${callsWk} Anrufe</div></div>
       </div>
+    </div>
+    ${renderBranchePerf(leads)}`;
+}
+
+/** Welche Branche reagiert am besten? (zeigt wo sich Akquise lohnt) */
+function renderBranchePerf(leads) {
+  const map = new Map();
+  leads.forEach((l) => {
+    if (l.status === "offen") return; // nur kontaktierte zählen
+    const b = brancheOf(l);
+    const e = map.get(b) || { contacted: 0, replied: 0, won: 0 };
+    e.contacted++;
+    if (hasResponded(l)) e.replied++;
+    if (l.status === "kunde") e.won++;
+    map.set(b, e);
+  });
+  const rows = [...map.entries()]
+    .map(([b, e]) => ({ b, ...e, rate: e.contacted ? Math.round((e.replied / e.contacted) * 100) : 0 }))
+    .filter((r) => r.contacted >= 1)
+    .sort((a, b) => b.rate - a.rate || b.contacted - a.contacted)
+    .slice(0, 8);
+  if (!rows.length) return "";
+  return `
+    <div class="branche-perf">
+      <div class="ana-title" style="margin-top:20px">📈 Welche Branche reagiert am besten?</div>
+      <table class="bp-table">
+        <thead><tr><th>Branche</th><th>Kontaktiert</th><th>Antworten</th><th>Quote</th><th>Kunden</th></tr></thead>
+        <tbody>
+          ${rows.map((r) => `<tr>
+            <td>${esc(r.b)}</td>
+            <td>${r.contacted}</td>
+            <td>${r.replied}</td>
+            <td><b>${r.rate}%</b></td>
+            <td>${r.won}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>
     </div>`;
 }
 
@@ -418,6 +467,7 @@ function openLead(id) {
         <button class="btn btn-primary" id="d-call" ${lead.phone ? "" : "disabled"}>📞 Anrufen</button>
         <button class="btn" id="d-n8n" ${canMail ? "" : `disabled title="${optedOut ? "Kein Interesse/Kunde" : alreadyColdMailed(lead) ? "Erstmail schon raus" : "Keine E-Mail/Website"}"`}>🚀 n8n</button>
         <button class="btn" id="d-followup" ${canFollow ? "" : `disabled title="${optedOut ? "Kein Interesse/Kunde" : alreadyFollowedUp(lead) ? "Follow-up schon erledigt" : "Keine E-Mail/Website"}"`}>↩️ Follow-up</button>
+        <button class="btn" id="d-reply" style="border-color:var(--success);color:var(--success)">💬 Hat geantwortet</button>
       </div>
       <div class="row2">
         <div class="field"><label>Temperatur</label><select id="d-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === lead.temperature ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
@@ -446,6 +496,11 @@ function openLead(id) {
   $("#modal-close").onclick = closeModal;
   $("#d-mail").onclick = () => composeMail(id);
   $("#d-call").onclick = () => callLead(id);
+  $("#d-reply").onclick = () => {
+    Store.logActivity(id, { type: "note", text: "Hat geantwortet", status: "geantwortet", temperature: "warm", nextFollowUp: null });
+    toast("Als geantwortet markiert 💬");
+    openLead(id); renderBackground();
+  };
   if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => pushToN8n([Store.getLead(id)], "first");
   if (!$("#d-followup").disabled) $("#d-followup").onclick = () => pushToN8n([Store.getLead(id)], "followup");
   $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); openLead(id); renderBackground(); };
