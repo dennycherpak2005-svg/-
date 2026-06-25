@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Akquise-Cockpit</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260625g" />
+  <link rel="stylesheet" href="css/styles.css?v=20260625h" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 </head>
 <body>
@@ -13,6 +13,7 @@
       <div class="brand"><span class="logo">🎯</span> Akquise</div>
       <a class="nav-item active" data-view="cockpit"><span class="ico">📊</span> Cockpit</a>
       <a class="nav-item" data-view="worklist"><span class="ico">🎯</span> Arbeitsliste</a>
+      <a class="nav-item" data-view="pipeline"><span class="ico">🗂</span> Pipeline</a>
       <a class="nav-item" data-view="finder"><span class="ico">🔍</span> Lead-Finder</a>
       <a class="nav-item" data-view="n8n"><span class="ico">🔗</span> n8n Versand</a>
       <a class="nav-item" data-view="import"><span class="ico">📥</span> Leads importieren</a>
@@ -83,6 +84,12 @@
             </div>
             <div id="worklist"></div>
           </div>
+        </section>
+
+        <!-- ===== Pipeline (Kanban) ===== -->
+        <section class="view" id="view-pipeline">
+          <p class="muted small" style="margin-bottom:12px">Karten per Drag &amp; Drop zwischen den Spalten ziehen, um den Status zu ändern.</p>
+          <div class="pipeline" id="pipeline-board"></div>
         </section>
 
         <!-- ===== Lead-Finder (Auto-Scraper) ===== -->
@@ -208,8 +215,8 @@
   <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
   <div class="toast" id="toast"></div>
 
-  <script src="js/store.js?v=20260625g"></script>
-  <script src="js/dashboard.js?v=20260625g"></script>
-  <script src="js/finder.js?v=20260625g"></script>
+  <script src="js/store.js?v=20260625h"></script>
+  <script src="js/dashboard.js?v=20260625h"></script>
+  <script src="js/finder.js?v=20260625h"></script>
 </body>
 </html>

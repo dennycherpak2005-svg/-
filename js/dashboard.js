@@ -334,6 +334,62 @@ function bindWorklistOnce() {
 }
 
 /* ============================================================
+   Pipeline (Kanban mit Drag & Drop)
+   ============================================================ */
+const PIPE_LIMIT = 60; // Karten pro Spalte begrenzen (Performance)
+
+function renderPipeline() {
+  const board = $("#pipeline-board");
+  if (!board) return;
+  const view = document.getElementById("view-pipeline");
+  if (!view || !view.classList.contains("active")) return; // nur rendern wenn sichtbar
+
+  const q = state.search.toLowerCase();
+  let leads = Store.getLeads();
+  if (q) leads = leads.filter((l) => [l.name, l.email, l.company, l.phone, l.source].join(" ").toLowerCase().includes(q));
+
+  board.innerHTML = Store.STATUSES.map((s) => {
+    const items = leads.filter((l) => l.status === s.id);
+    const shown = items.slice(0, PIPE_LIMIT);
+    const more = items.length - shown.length;
+    const cards = shown.map((l) => `
+      <div class="card" draggable="true" data-id="${l.id}">
+        <div class="name">${esc(l.name || "Ohne Namen")}</div>
+        <div class="company">${esc(l.company || l.email || "—")}</div>
+        <div class="meta">${tempBadge(l.temperature)}<span class="date">${relTime(l.lastContact)}</span></div>
+      </div>`).join("");
+    return `<div class="column" data-status="${s.id}">
+      <h3><span class="dot" style="background:${s.color}"></span>${esc(s.label)}<span class="count">${items.length}</span></h3>
+      ${cards || `<div class="empty-col">leer</div>`}
+      ${more ? `<div class="empty-col">… +${more} weitere</div>` : ""}
+    </div>`;
+  }).join("");
+
+  // Drag & Drop
+  $$(".card", board).forEach((card) => {
+    card.addEventListener("click", () => openLead(card.dataset.id));
+    card.addEventListener("dragstart", (e) => { card.classList.add("dragging"); e.dataTransfer.setData("text/plain", card.dataset.id); });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+  });
+  $$(".column", board).forEach((col) => {
+    col.addEventListener("dragover", (e) => { e.preventDefault(); col.classList.add("drag-over"); });
+    col.addEventListener("dragleave", () => col.classList.remove("drag-over"));
+    col.addEventListener("drop", (e) => {
+      e.preventDefault(); col.classList.remove("drag-over");
+      const id = e.dataTransfer.getData("text/plain");
+      const lead = Store.getLead(id);
+      const newStatus = col.dataset.status;
+      if (!lead || lead.status === newStatus) return;
+      const patch = { status: newStatus };
+      if (newStatus === "abgelehnt" || newStatus === "kunde") patch.nextFollowUp = null;
+      Store.updateLead(id, patch);
+      toast(`„${lead.name || "Lead"}" → ${Store.statusById(newStatus).label}`);
+      renderPipeline(); renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist();
+    });
+  });
+}
+
+/* ============================================================
    Mail verfassen (mailto + Vorlage + Logging)
    ============================================================ */
 function composeMail(id) {
@@ -689,7 +745,7 @@ function toggleTheme() {
   localStorage.setItem("leadcrm.theme", t); applyTheme(t);
 }
 
-const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", finder: "Lead-Finder", n8n: "n8n Versand", import: "Leads importieren", templates: "Mail-Vorlagen" };
+const TITLES = { cockpit: "Cockpit", worklist: "Arbeitsliste", pipeline: "Pipeline", finder: "Lead-Finder", n8n: "n8n Versand", import: "Leads importieren", templates: "Mail-Vorlagen" };
 function switchView(view) {
   state.view = view;
   $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
@@ -701,11 +757,11 @@ function switchView(view) {
 /** Alles neu rendern (inkl. aktive Listen). */
 function renderAll() {
   renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist();
-  renderFilters(); renderWorklist();
+  renderFilters(); renderWorklist(); renderPipeline();
   renderTemplates();
 }
 /** Hintergrund-Render ohne offenes Modal zu schließen. */
-function renderBackground() { renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
+function renderBackground() { renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); renderPipeline(); }
 
 /* ============================================================
    n8n-Anbindung (Cold-Mail-Versand per Webhook)
@@ -954,9 +1010,9 @@ applyTheme(localStorage.getItem("leadcrm.theme") || "light");
 let searchTimer = null;
 $("#global-search").addEventListener("input", (e) => {
   const v = e.target.value;
-  if (v && state.view !== "worklist") switchView("worklist");
+  if (v && state.view !== "worklist" && state.view !== "pipeline") switchView("worklist");
   clearTimeout(searchTimer);
-  searchTimer = setTimeout(() => { state.search = v; renderWorklist(); }, 180); // entprellt
+  searchTimer = setTimeout(() => { state.search = v; renderWorklist(); renderPipeline(); }, 180); // entprellt
 });
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
 window.addEventListener("leadcrm:error", (e) => toast("⚠️ " + (e.detail || "Speicherfehler")));
