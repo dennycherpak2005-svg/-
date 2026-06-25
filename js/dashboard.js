@@ -594,7 +594,8 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
     if (res.ok) {
       ok++;
       const patch = { type: "mail", outcome: `${label} an n8n gesendet`, status: l.status === "offen" ? "kontaktiert" : l.status };
-      if (mode === "followup") patch.nextFollowUp = Date.now() + 7 * 86400000; // nächstes Follow-up in 7 Tagen
+      // Erstmail -> Follow-up in 3 Tagen einplanen; gesendetes Follow-up -> nächstes in 7 Tagen
+      patch.nextFollowUp = Date.now() + (mode === "followup" ? 7 : 3) * 86400000;
       Store.logActivity(l.id, patch);
     } else fail++;
   }
