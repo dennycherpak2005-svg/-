@@ -735,5 +735,21 @@ $("#global-search").addEventListener("input", (e) => {
 });
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
 
+// Einmalige Auto-Nachtragung: alten kontaktierten Leads ohne Termin ein
+// Follow-up-Datum geben, damit sie unter "Follow-ups fällig" auftauchen.
+(function autoMigrateFollowups() {
+  if (localStorage.getItem("leadcrm.fu_migrated")) return;
+  const leads = Store.getLeads();
+  let n = 0;
+  leads.forEach((l) => {
+    if (!l.nextFollowUp && (l.lastContact || (l.status && l.status !== "offen"))) {
+      Store.updateLead(l.id, { nextFollowUp: (l.lastContact || l.createdAt) + 3 * 86400000 });
+      n++;
+    }
+  });
+  localStorage.setItem("leadcrm.fu_migrated", "1");
+  if (n > 0) setTimeout(() => toast(`${n} alte Follow-ups automatisch nachgetragen ✅`), 700);
+})();
+
 initN8n();
 renderAll();
