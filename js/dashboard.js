@@ -46,7 +46,21 @@ function statusBadge(id) {
   const s = Store.statusById(id);
   return `<span class="status-pill" style="background:${s.color}1a;color:${s.color}"><span class="dot" style="background:${s.color}"></span>${s.label}</span>`;
 }
-function followDue(lead) { return lead.nextFollowUp && lead.nextFollowUp <= Date.now() + 12 * 3600000; }
+// Hat der Lead schon mal ein Follow-up bekommen?
+function alreadyFollowedUp(lead) {
+  return (lead.activities || []).some((a) => (a.outcome || "").includes("Follow-up"));
+}
+// Follow-up fällig? Nicht bei "Kein Interesse"/Kunde und nicht wenn schon eins raus ist.
+function followDue(lead) {
+  if (!lead.nextFollowUp) return false;
+  if (lead.status === "abgelehnt" || lead.status === "kunde") return false;
+  if (alreadyFollowedUp(lead)) return false;
+  return lead.nextFollowUp <= Date.now() + 12 * 3600000;
+}
+// Soll der Lead überhaupt noch in der Follow-up-Liste auftauchen?
+function followEligible(lead) {
+  return lead.nextFollowUp && lead.status !== "abgelehnt" && lead.status !== "kunde" && !alreadyFollowedUp(lead);
+}
 
 function filtered() {
   let leads = Store.getLeads();
@@ -111,7 +125,7 @@ function bindMini(container) {
 }
 
 function renderFollowups() {
-  const leads = Store.getLeads().filter((l) => l.nextFollowUp).sort((a, b) => a.nextFollowUp - b.nextFollowUp).slice(0, 6);
+  const leads = Store.getLeads().filter(followEligible).sort((a, b) => a.nextFollowUp - b.nextFollowUp).slice(0, 6);
   const c = $("#followups");
   if (!leads.length) { c.innerHTML = emptyMini("Keine Follow-ups geplant", "🎉"); return; }
   c.innerHTML = leads.map((l) => miniRow(l, `<span class="due ${followDue(l) ? "overdue" : ""}">${relTime(l.nextFollowUp)}</span>`)).join("");
@@ -279,10 +293,12 @@ function callLead(id) {
     const o = outcomes.find((x) => x.key === b.dataset.key);
     const note = $("#call-note").value.trim();
     const days = $("#call-follow").value;
+    // Bei "Kein Interesse" kein Follow-up planen (Termin löschen)
+    const nf = o.status === "abgelehnt" ? null : (days ? Date.now() + Number(days) * 86400000 : undefined);
     Store.logActivity(id, {
       type: "call", outcome: o.label, text: note,
       status: o.status, temperature: o.temp || undefined,
-      nextFollowUp: days ? Date.now() + Number(days) * 86400000 : undefined,
+      nextFollowUp: nf,
     });
     toast(`Anruf protokolliert: ${o.label}`);
     closeModal(); renderAll();
@@ -341,7 +357,14 @@ function openLead(id) {
   if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => pushToN8n([Store.getLead(id)], "first");
   if (!$("#d-followup").disabled) $("#d-followup").onclick = () => pushToN8n([Store.getLead(id)], "followup");
   $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); renderBackground(); };
-  $("#d-status").onchange = (e) => { Store.setStatus(id, e.target.value); toast("Status aktualisiert"); renderBackground(); };
+  $("#d-status").onchange = (e) => {
+    const v = e.target.value;
+    const patch = { status: v };
+    if (v === "abgelehnt" || v === "kunde") patch.nextFollowUp = null; // kein Follow-up mehr
+    Store.updateLead(id, patch);
+    toast("Status aktualisiert");
+    renderBackground();
+  };
   $("#d-edit").onclick = () => editLead(id);
   $("#d-delete").onclick = () => { if (confirm(`„${lead.name}" löschen?`)) { Store.deleteLead(id); closeModal(); toast("Gelöscht"); renderAll(); } };
   const addNote = () => { const v = $("#note-input").value.trim(); if (!v) return; Store.logActivity(id, { type: "note", text: v }); openLead(id); toast("Notiz gespeichert"); renderBackground(); };
@@ -594,8 +617,8 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
     if (res.ok) {
       ok++;
       const patch = { type: "mail", outcome: `${label} an n8n gesendet`, status: l.status === "offen" ? "kontaktiert" : l.status };
-      // Erstmail -> Follow-up in 3 Tagen einplanen; gesendetes Follow-up -> nächstes in 7 Tagen
-      patch.nextFollowUp = Date.now() + (mode === "followup" ? 7 : 3) * 86400000;
+      // Erstmail -> Follow-up in 3 Tagen einplanen; nach dem Follow-up -> kein weiteres (max. 1)
+      patch.nextFollowUp = mode === "followup" ? null : Date.now() + 3 * 86400000;
       Store.logActivity(l.id, patch);
     } else fail++;
   }
