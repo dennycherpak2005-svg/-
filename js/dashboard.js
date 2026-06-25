@@ -336,7 +336,7 @@ function openLead(id) {
         <div class="detail-item"><div class="k">📞 Telefon</div><div class="v">${lead.phone ? `<a href="tel:${esc(lead.phone.replace(/\s/g, ""))}">${esc(lead.phone)}</a>` : "—"}</div></div>
         <div class="detail-item"><div class="k">🌐 Quelle</div><div class="v">${esc(lead.source)}</div></div>
         <div class="detail-item"><div class="k">📍 Ort</div><div class="v">${esc(lead.location || "—")}</div></div>
-        <div class="detail-item"><div class="k">⏰ Nächstes Follow-up</div><div class="v">${lead.nextFollowUp ? fmtDate(lead.nextFollowUp) + ` (${relTime(lead.nextFollowUp)})` : "—"}</div></div>
+        <div class="detail-item"><div class="k">⏰ Nächstes Follow-up</div><div class="v">${followEligible(lead) ? fmtDate(lead.nextFollowUp) + ` (${relTime(lead.nextFollowUp)})` : (lead.status === "abgelehnt" ? "— kein Interesse" : lead.status === "kunde" ? "— Kunde" : alreadyFollowedUp(lead) ? "— Follow-up erledigt" : "—")}</div></div>
         <div class="detail-item"><div class="k">📨 Letzter Kontakt</div><div class="v">${relTime(lead.lastContact)}</div></div>
       </div>
       <div class="notes">
@@ -772,6 +772,18 @@ window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll()
   });
   localStorage.setItem("leadcrm.fu_migrated", "1");
   if (n > 0) setTimeout(() => toast(`${n} alte Follow-ups automatisch nachgetragen ✅`), 700);
+})();
+
+// Einmalige Bereinigung: alte Follow-up-Termine bei "Kein Interesse"/Kunde/
+// schon-gefollowupten Leads entfernen.
+(function cleanIneligibleFollowups() {
+  if (localStorage.getItem("leadcrm.fu_clean1")) return;
+  Store.getLeads().forEach((l) => {
+    if (l.nextFollowUp && (l.status === "abgelehnt" || l.status === "kunde" || alreadyFollowedUp(l))) {
+      Store.updateLead(l.id, { nextFollowUp: null });
+    }
+  });
+  localStorage.setItem("leadcrm.fu_clean1", "1");
 })();
 
 initN8n();
