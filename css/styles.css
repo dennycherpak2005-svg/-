@@ -349,3 +349,30 @@ code { background: var(--surface-2); padding: 1px 6px; border-radius: 6px; font-
 .inline-check input { width: 16px; height: 16px; accent-color: var(--primary); }
 .n8n-info { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin: 14px 0; font-size: 14px; }
 .n8n-pre { background: var(--bg); color: #cbd5e1; border-radius: 10px; padding: 12px; font-size: 12px; overflow-x: auto; margin: 6px 0 12px; line-height: 1.5; }
+
+/* ============================================================
+   Tagesziel + Statistik-Widgets
+   ============================================================ */
+.goal-input { width: 64px; padding: 5px 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+.goal-body { padding: 18px 20px; }
+.goal-top { display: flex; align-items: baseline; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; }
+.goal-count { font-size: 30px; font-weight: 800; }
+.goal-count .muted { font-size: 20px; font-weight: 600; }
+.goal-msg { font-size: 14px; color: var(--text-soft); }
+.goal-bar { height: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+.goal-fill { height: 100%; background: linear-gradient(90deg, var(--primary), #818cf8); border-radius: 20px; transition: width .4s ease; }
+.goal-fill.done { background: linear-gradient(90deg, var(--success), #4ade80); }
+
+.analytics { padding: 18px 20px; }
+.ana-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; }
+@media (max-width: 860px) { .ana-grid { grid-template-columns: 1fr; } }
+.ana-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-soft); margin-bottom: 12px; }
+.funnel-row { display: grid; grid-template-columns: 92px 1fr 34px; align-items: center; gap: 10px; margin-bottom: 9px; }
+.funnel-label { font-size: 13px; color: var(--text-soft); }
+.funnel-track { background: var(--surface-2); border-radius: 8px; height: 22px; overflow: hidden; }
+.funnel-bar { height: 100%; border-radius: 8px; min-width: 2px; transition: width .4s ease; }
+.funnel-n { font-size: 14px; font-weight: 700; text-align: right; }
+.ana-kpis { display: flex; flex-direction: column; gap: 12px; }
+.kpi { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+.kpi-v { font-size: 26px; font-weight: 800; }
+.kpi-l { font-size: 13px; font-weight: 600; }

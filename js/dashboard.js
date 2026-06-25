@@ -107,6 +107,76 @@ function renderStats() {
     </div>`).join("");
 }
 
+/* ============================================================
+   Tagesziel + Statistik-Widgets
+   ============================================================ */
+const GOAL_KEY = "leadcrm.goal";
+function getGoal() { return Math.max(1, Number(localStorage.getItem(GOAL_KEY)) || 20); }
+function startOfToday() { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); }
+function allActivities() { return Store.getLeads().flatMap((l) => l.activities || []); }
+
+function renderGoal() {
+  const wrap = $("#goal-body"); if (!wrap) return;
+  const goal = getGoal();
+  const acts = allActivities();
+  const t0 = startOfToday();
+  const done = acts.filter((a) => (a.type === "mail" || a.type === "call") && a.at >= t0).length;
+  const pct = Math.min(100, Math.round((done / goal) * 100));
+  const reached = done >= goal;
+  $("#goal-wrap").innerHTML = `<span class="muted small">Ziel:</span> <input id="goal-input" type="number" min="1" value="${goal}" class="goal-input" /> <span class="muted small">Kontakte/Tag</span>`;
+  wrap.innerHTML = `
+    <div class="goal-top">
+      <div class="goal-count">${done} <span class="muted">/ ${goal}</span></div>
+      <div class="goal-msg">${reached ? "🎉 Tagesziel erreicht – stark!" : `Noch <b>${goal - done}</b> bis zum Ziel`}</div>
+    </div>
+    <div class="goal-bar"><div class="goal-fill ${reached ? "done" : ""}" style="width:${pct}%"></div></div>`;
+  $("#goal-input").onchange = (e) => { localStorage.setItem(GOAL_KEY, String(Math.max(1, Number(e.target.value) || 20))); renderGoal(); };
+}
+
+function renderAnalytics() {
+  const el = $("#analytics"); if (!el) return;
+  const leads = Store.getLeads();
+  const acts = allActivities();
+  const wk = Date.now() - 7 * 86400000;
+  const mailsWk = acts.filter((a) => a.type === "mail" && a.at >= wk).length;
+  const callsWk = acts.filter((a) => a.type === "call" && a.at >= wk).length;
+  const newWk = leads.filter((l) => l.createdAt >= wk).length;
+
+  const funnel = [
+    { id: "offen", label: "Offen" },
+    { id: "kontaktiert", label: "Kontaktiert" },
+    { id: "geantwortet", label: "Geantwortet" },
+    { id: "termin", label: "Termin" },
+    { id: "kunde", label: "Kunde" },
+  ].map((s) => ({ ...s, n: leads.filter((l) => l.status === s.id).length, color: Store.statusById(s.id).color }));
+  const maxN = Math.max(1, ...funnel.map((f) => f.n));
+
+  const contacted = leads.filter((l) => l.status !== "offen").length;
+  const responded = leads.filter((l) => ["geantwortet", "termin", "kunde"].includes(l.status)).length;
+  const won = leads.filter((l) => l.status === "kunde").length;
+  const respRate = contacted ? Math.round((responded / contacted) * 100) : 0;
+  const winRate = contacted ? Math.round((won / contacted) * 100) : 0;
+
+  $("#stats-sub").textContent = `letzte 7 Tage: ${mailsWk} Mails · ${callsWk} Anrufe · ${newWk} neue Leads`;
+  el.innerHTML = `
+    <div class="ana-grid">
+      <div class="ana-funnel">
+        <div class="ana-title">Trichter</div>
+        ${funnel.map((f) => `
+          <div class="funnel-row">
+            <div class="funnel-label">${f.label}</div>
+            <div class="funnel-track"><div class="funnel-bar" style="width:${Math.round((f.n / maxN) * 100)}%;background:${f.color}"></div></div>
+            <div class="funnel-n">${f.n}</div>
+          </div>`).join("")}
+      </div>
+      <div class="ana-kpis">
+        <div class="kpi"><div class="kpi-v">${respRate}%</div><div class="kpi-l">Antwortquote</div><div class="kpi-s muted small">${responded} von ${contacted} kontaktierten</div></div>
+        <div class="kpi"><div class="kpi-v">${winRate}%</div><div class="kpi-l">Abschlussquote</div><div class="kpi-s muted small">${won} Kunden</div></div>
+        <div class="kpi"><div class="kpi-v">${mailsWk + callsWk}</div><div class="kpi-l">Aktionen / 7 Tage</div><div class="kpi-s muted small">${mailsWk} Mails · ${callsWk} Anrufe</div></div>
+      </div>
+    </div>`;
+}
+
 function miniRow(l, extra = "") {
   return `<div class="mini-row" data-id="${l.id}">
     ${avatar(l.name)}
@@ -564,12 +634,12 @@ function switchView(view) {
 
 /** Alles neu rendern (inkl. aktive Listen). */
 function renderAll() {
-  renderStats(); renderFollowups(); renderHotlist();
+  renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist();
   renderFilters(); renderWorklist();
   renderTemplates();
 }
 /** Hintergrund-Render ohne offenes Modal zu schließen. */
-function renderBackground() { renderStats(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
+function renderBackground() { renderStats(); renderGoal(); renderAnalytics(); renderFollowups(); renderHotlist(); renderFilters(); renderWorklist(); }
 
 /* ============================================================
    n8n-Anbindung (Cold-Mail-Versand per Webhook)

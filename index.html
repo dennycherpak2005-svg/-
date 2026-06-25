@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Akquise-Cockpit</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260625d" />
+  <link rel="stylesheet" href="css/styles.css?v=20260625e" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 </head>
 <body>
@@ -43,6 +43,17 @@
         <!-- ===== Cockpit ===== -->
         <section class="view active" id="view-cockpit">
           <div class="stats" id="stat-cards"></div>
+
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head"><h2>🎯 Tagesziel</h2><div class="right" id="goal-wrap"></div></div>
+            <div id="goal-body" class="goal-body"></div>
+          </div>
+
+          <div class="panel" style="margin-bottom:16px">
+            <div class="panel-head"><h2>📊 Statistik</h2><div class="right muted small" id="stats-sub"></div></div>
+            <div id="analytics" class="analytics"></div>
+          </div>
+
           <div class="cockpit-grid">
             <div class="panel">
               <div class="panel-head"><h2>⏰ Follow-ups fällig</h2><div class="right"><button class="btn btn-sm" id="btn-followup-backfill">⏱ Fehlende nachtragen</button><button class="btn btn-sm" id="btn-followup-due">↩️ Alle fälligen anschreiben</button></div></div>
@@ -196,8 +207,8 @@
   <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
   <div class="toast" id="toast"></div>
 
-  <script src="js/store.js?v=20260625d"></script>
-  <script src="js/dashboard.js?v=20260625d"></script>
-  <script src="js/finder.js?v=20260625d"></script>
+  <script src="js/store.js?v=20260625e"></script>
+  <script src="js/dashboard.js?v=20260625e"></script>
+  <script src="js/finder.js?v=20260625e"></script>
 </body>
 </html>
