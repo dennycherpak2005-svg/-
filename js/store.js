@@ -39,11 +39,31 @@ function readAll() {
   }
 }
 function writeAll(data) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error("Speichern fehlgeschlagen:", e);
+    // Speicher voll o.ä. – Oberfläche informieren, damit nichts unbemerkt verloren geht.
+    try { window.dispatchEvent(new CustomEvent("leadcrm:error", { detail: "Speicher voll – bitte per 💾 Backup sichern und alte/abgelehnte Leads löschen." })); } catch (_) {}
+    return false;
+  }
   try { window.dispatchEvent(new Event("leadcrm:changed")); } catch (_) {}
+  return true;
 }
 function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+/** Dedupe-Schlüssel eines Leads: E-Mail, Telefon und Name+Ort. */
+function leadKeys(l) {
+  const keys = [];
+  const email = (l.email || "").toLowerCase().trim();
+  const phone = (l.phone || "").replace(/\D/g, "");
+  const name = (l.name || l.company || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const loc = (l.location || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (email) keys.push("e:" + email);
+  if (phone.length >= 6) keys.push("p:" + phone);
+  if (name && loc) keys.push("n:" + name + "|" + loc); // nur Name+Ort zusammen (sicher)
+  return keys;
 }
 
 /* ---------- API ---------- */
@@ -63,26 +83,42 @@ const Store = {
     return lead;
   },
 
-  /** Mehrere Leads importieren – dedupliziert über E-Mail + Telefon. */
+  /** Mehrere Leads importieren – dedupliziert über E-Mail, Telefon UND Name+Ort
+   *  (wichtig für gescrapte Leads ohne Kontaktdaten – sonst Dubletten-Flut). */
   importLeads(list) {
     const data = readAll();
-    const seen = new Set(
-      data.leads.flatMap((l) => [l.email && l.email.toLowerCase(), l.phone && l.phone.replace(/\s/g, "")].filter(Boolean))
-    );
+    const seen = new Set(data.leads.flatMap(leadKeys));
     let skipped = 0;
     const addedLeads = [];
     list.forEach((input) => {
-      const key1 = (input.email || "").toLowerCase();
-      const key2 = (input.phone || "").replace(/\s/g, "");
-      if ((key1 && seen.has(key1)) || (key2 && seen.has(key2))) { skipped++; return; }
+      const keys = leadKeys(input);
+      if (keys.some((k) => seen.has(k))) { skipped++; return; }
       const lead = normalizeLead(input);
+      keys.forEach((k) => seen.add(k));
       data.leads.push(lead);
-      if (key1) seen.add(key1);
-      if (key2) seen.add(key2);
       addedLeads.push(lead);
     });
     writeAll(data);
     return { added: addedLeads.length, skipped, addedLeads };
+  },
+
+  /** Bestehende Dubletten entfernen – behält je Dublette die Version mit dem
+   *  meisten Verlauf (Aktivitäten/Kontakt). Gibt die Anzahl entfernter zurück. */
+  dedupe() {
+    const data = readAll();
+    const score = (l) => (l.activities ? l.activities.length : 0) * 1000 + (l.lastContact ? 1 : 0);
+    const ranked = [...data.leads].sort((a, b) => score(b) - score(a));
+    const seen = new Set();
+    const keep = [];
+    ranked.forEach((l) => {
+      const keys = leadKeys(l);
+      if (keys.length && keys.some((k) => seen.has(k))) return; // Dublette -> verwerfen
+      keys.forEach((k) => seen.add(k));
+      keep.push(l);
+    });
+    const removed = data.leads.length - keep.length;
+    if (removed > 0) { data.leads = keep; writeAll(data); }
+    return removed;
   },
 
   updateLead(id, patch) {

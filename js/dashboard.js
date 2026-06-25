@@ -19,7 +19,7 @@ function avatarColor(str) {
   let h = 0; for (let i = 0; i < (str || "").length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
   return c[Math.abs(h) % c.length];
 }
-function avatar(n) { return `<span class="avatar" style="background:${avatarColor(n)}">${initials(n)}</span>`; }
+function avatar(n) { return `<span class="avatar" style="background:${avatarColor(n)}">${esc(initials(n))}</span>`; }
 function relTime(ts) {
   if (!ts) return "—";
   const d = Date.now() - ts, m = 60000, h = 3600000, day = 86400000;
@@ -49,6 +49,14 @@ function statusBadge(id) {
 // Hat der Lead schon mal ein Follow-up bekommen?
 function alreadyFollowedUp(lead) {
   return (lead.activities || []).some((a) => (a.outcome || "").includes("Follow-up"));
+}
+// Hat der Lead schon die Erst-Cold-Mail bekommen?
+function alreadyColdMailed(lead) {
+  return (lead.activities || []).some((a) => (a.outcome || "").includes("Cold-Mail an n8n"));
+}
+// Opt-out: "Kein Interesse" oder Kunde -> nie automatisch anschreiben.
+function isOptedOut(lead) {
+  return lead.status === "abgelehnt" || lead.status === "kunde";
 }
 // Follow-up fällig? Nicht bei "Kein Interesse"/Kunde und nicht wenn schon eins raus ist.
 function followDue(lead) {
@@ -158,13 +166,17 @@ function renderFilters() {
   $$("#status-filter .chip").forEach((c) => c.addEventListener("click", () => { state.status = c.dataset.status; renderWorklist(); renderFilters(); }));
 }
 
+const WORKLIST_LIMIT = 150; // bei sehr vielen Treffern nur die ersten zeigen (Performance)
+
 function renderWorklist() {
-  const leads = filtered();
+  const all = filtered();
   const c = $("#worklist");
-  if (!leads.length) {
+  if (!all.length) {
     c.innerHTML = `<div class="empty-state"><div class="big">🗒️</div><h3>Keine Leads</h3><p>Importiere Leads oder lege manuell welche an.</p></div>`;
     return;
   }
+  const leads = all.slice(0, WORKLIST_LIMIT);
+  const more = all.length - leads.length;
   c.innerHTML = leads.map((l) => `
     <div class="work-row ${followDue(l) ? "due-row" : ""}" data-id="${l.id}">
       ${avatar(l.name)}
@@ -182,17 +194,23 @@ function renderWorklist() {
         <button class="btn btn-sm" data-act="call" ${l.phone ? "" : "disabled title='Keine Nummer'"}>📞 Call</button>
         <button class="btn btn-sm" data-act="open">›</button>
       </div>
-    </div>`).join("");
+    </div>`).join("") + (more ? `<div class="empty-mini" style="padding:16px"><span></span>… und ${more} weitere – grenze mit Suche oder Filter ein.</div>` : "");
+}
 
-  $$(".work-row", c).forEach((row) => {
+// Ein einziger Listener für die ganze Arbeitsliste (Event-Delegation statt N Listener).
+function bindWorklistOnce() {
+  const c = $("#worklist");
+  if (!c || c.dataset.bound) return;
+  c.dataset.bound = "1";
+  c.addEventListener("click", (e) => {
+    const row = e.target.closest(".work-row");
+    if (!row) return;
     const id = row.dataset.id;
-    row.addEventListener("click", (e) => { if (!e.target.closest("[data-act]")) openLead(id); });
-    $$("[data-act]", row).forEach((b) => b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (b.dataset.act === "mail") composeMail(id);
-      else if (b.dataset.act === "call") callLead(id);
-      else openLead(id);
-    }));
+    const act = e.target.closest("[data-act]");
+    if (act && act.disabled) return;
+    if (act && act.dataset.act === "mail") composeMail(id);
+    else if (act && act.dataset.act === "call") callLead(id);
+    else openLead(id);
   });
 }
 
@@ -313,6 +331,9 @@ function openLead(id) {
   if (!lead) return;
   const acts = (lead.activities || []).slice().reverse();
   const actIco = { mail: "📧", call: "📞", note: "📝", status: "🔄" };
+  const optedOut = isOptedOut(lead); // nie automatisch anschreiben
+  const canMail = (lead.email || lead.website) && !optedOut && !alreadyColdMailed(lead); // max. 1 Erstmail
+  const canFollow = (lead.email || lead.website) && !optedOut && !alreadyFollowedUp(lead); // max. 1 Follow-up
 
   $("#modal").innerHTML = `
     <div class="modal-head">
@@ -324,8 +345,8 @@ function openLead(id) {
       <div class="quick-actions">
         <button class="btn btn-primary" id="d-mail" ${lead.email ? "" : "disabled"}>📧 Mail</button>
         <button class="btn btn-primary" id="d-call" ${lead.phone ? "" : "disabled"}>📞 Anrufen</button>
-        <button class="btn" id="d-n8n" ${lead.email || lead.website ? "" : "disabled title='Keine E-Mail/Website'"}>🚀 n8n</button>
-        <button class="btn" id="d-followup" ${lead.email || lead.website ? "" : "disabled title='Keine E-Mail/Website'"}>↩️ Follow-up</button>
+        <button class="btn" id="d-n8n" ${canMail ? "" : `disabled title="${optedOut ? "Kein Interesse/Kunde" : alreadyColdMailed(lead) ? "Erstmail schon raus" : "Keine E-Mail/Website"}"`}>🚀 n8n</button>
+        <button class="btn" id="d-followup" ${canFollow ? "" : `disabled title="${optedOut ? "Kein Interesse/Kunde" : alreadyFollowedUp(lead) ? "Follow-up schon erledigt" : "Keine E-Mail/Website"}"`}>↩️ Follow-up</button>
       </div>
       <div class="row2">
         <div class="field"><label>Temperatur</label><select id="d-temp">${Store.TEMPS.map((t) => `<option value="${t.id}" ${t.id === lead.temperature ? "selected" : ""}>${t.emoji} ${t.label}</option>`).join("")}</select></div>
@@ -356,13 +377,14 @@ function openLead(id) {
   $("#d-call").onclick = () => callLead(id);
   if (!$("#d-n8n").disabled) $("#d-n8n").onclick = () => pushToN8n([Store.getLead(id)], "first");
   if (!$("#d-followup").disabled) $("#d-followup").onclick = () => pushToN8n([Store.getLead(id)], "followup");
-  $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); renderBackground(); };
+  $("#d-temp").onchange = (e) => { Store.setTemperature(id, e.target.value); toast("Temperatur aktualisiert"); openLead(id); renderBackground(); };
   $("#d-status").onchange = (e) => {
     const v = e.target.value;
     const patch = { status: v };
     if (v === "abgelehnt" || v === "kunde") patch.nextFollowUp = null; // kein Follow-up mehr
     Store.updateLead(id, patch);
     toast("Status aktualisiert");
+    openLead(id); // Modal mit neuen Daten (Buttons, Follow-up-Zeile) neu rendern
     renderBackground();
   };
   $("#d-edit").onclick = () => editLead(id);
@@ -508,7 +530,12 @@ function exportCSV() {
   if (!leads.length) { toast("Keine Leads"); return; }
   const cols = ["name", "company", "position", "email", "phone", "source", "temperature", "status", "createdAt"];
   const head = ["Name", "Firma", "Position", "E-Mail", "Telefon", "Quelle", "Temperatur", "Status", "Erstellt"];
-  const e = (s) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+  // CSV-Escaping + Schutz vor Formel-Injection (Excel führt =,+,-,@ sonst als Formel aus)
+  const e = (s) => {
+    let v = String(s ?? "");
+    if (/^[=+\-@]/.test(v)) v = "'" + v;
+    return `"${v.replace(/"/g, '""')}"`;
+  };
   const rows = leads.map((l) => cols.map((c) =>
     e(c === "createdAt" ? fmtDate(l.createdAt) : c === "temperature" ? Store.tempById(l.temperature).label : c === "status" ? Store.statusById(l.status).label : l[c])
   ).join(","));
@@ -609,8 +636,22 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
   const label = mode === "followup" ? "Follow-up" : "Cold-Mail";
   if (!url) { toast(`Erst die ${label}-Webhook-URL eintragen`); switchView("n8n"); return; }
   // E-Mail ODER Website reicht – n8n holt die E-Mail notfalls von der Website
-  const list = leads.filter((l) => l && (l.email || l.website));
-  if (!list.length) { if (!opts.silent) toast("Keine Leads mit E-Mail oder Website dabei"); return; }
+  const withContact = leads.filter((l) => l && (l.email || l.website));
+  // 🔒 ZENTRALER SCHUTZ 1: "Kein Interesse"/Kunde werden NIE angeschrieben (Opt-out).
+  const blocked = withContact.filter(isOptedOut);
+  let eligible = withContact.filter((l) => !isOptedOut(l));
+  // 🔒 ZENTRALER SCHUTZ 2: kein Doppel-Versand. Max. 1 Erstmail, max. 1 Follow-up.
+  const dup = eligible.filter((l) => (mode === "followup" ? alreadyFollowedUp(l) : alreadyColdMailed(l)));
+  const list = eligible.filter((l) => (mode === "followup" ? !alreadyFollowedUp(l) : !alreadyColdMailed(l)));
+  if (!list.length) {
+    if (!opts.silent) {
+      const parts = [];
+      if (blocked.length) parts.push(`${blocked.length}× Kein Interesse/Kunde`);
+      if (dup.length) parts.push(`${dup.length}× schon angeschrieben`);
+      toast(parts.length ? `Nichts gesendet – ${parts.join(", ")} 🔒` : "Keine sendbaren Leads dabei");
+    }
+    return;
+  }
   let ok = 0, fail = 0;
   for (const l of list) {
     const res = await postN8n(url, leadPayload(l));
@@ -622,8 +663,9 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
       Store.logActivity(l.id, patch);
     } else fail++;
   }
-  n8nLog(`${ok} ${label}(s) an n8n gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}`);
-  if (!opts.silent) toast(`${ok} ${label} gesendet${fail ? ` (${fail} Fehler)` : " ✅"}`);
+  const skipped = blocked.length + dup.length;
+  n8nLog(`${ok} ${label}(s) gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}${skipped ? `, ${skipped} übersprungen (Opt-out/Doppel)` : ""}`);
+  if (!opts.silent) toast(`${ok} ${label} gesendet${skipped ? ` · ${skipped} geschützt 🔒` : ""}${fail ? ` (${fail} Fehler)` : ""}`);
   renderAll();
 }
 
@@ -752,11 +794,15 @@ $("#csv-file").addEventListener("change", (e) => {
 });
 $("#overlay").addEventListener("click", (e) => { if (e.target.id === "overlay") closeModal(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
+let searchTimer = null;
 $("#global-search").addEventListener("input", (e) => {
-  state.search = e.target.value; renderWorklist();
-  if (state.search && state.view !== "worklist") switchView("worklist");
+  const v = e.target.value;
+  if (v && state.view !== "worklist") switchView("worklist");
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { state.search = v; renderWorklist(); }, 180); // entprellt
 });
 window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll(); });
+window.addEventListener("leadcrm:error", (e) => toast("⚠️ " + (e.detail || "Speicherfehler")));
 
 // Einmalige Auto-Nachtragung: alten kontaktierten Leads ohne Termin ein
 // Follow-up-Datum geben, damit sie unter "Follow-ups fällig" auftauchen.
@@ -786,5 +832,14 @@ window.addEventListener("storage", (e) => { if (e.key === STORE_KEY) renderAll()
   localStorage.setItem("leadcrm.fu_clean1", "1");
 })();
 
+// Einmalige Dubletten-Bereinigung der bestehenden Daten.
+(function dedupeOnce() {
+  if (localStorage.getItem("leadcrm.dedupe1")) return;
+  const removed = Store.dedupe();
+  localStorage.setItem("leadcrm.dedupe1", "1");
+  if (removed > 0) setTimeout(() => toast(`🧹 ${removed} doppelte Leads zusammengeführt`), 1300);
+})();
+
 initN8n();
+bindWorklistOnce();
 renderAll();
