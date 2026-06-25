@@ -648,6 +648,21 @@ function initN8n() {
     if (!list.length) { toast("Keine fälligen Follow-ups mit E-Mail/Website"); return; }
     if (confirm(`${list.length} fällige(n) Lead(s) ein Follow-up schicken?`)) pushToN8n(list, "followup");
   };
+  if ($("#btn-followup-backfill")) $("#btn-followup-backfill").onclick = backfillFollowups;
+}
+
+/** Trägt allen schon kontaktierten Leads ohne Termin rückwirkend ein
+ *  Follow-up-Datum nach (letzter Kontakt + 3 Tage -> oft sofort fällig). */
+function backfillFollowups() {
+  const candidates = Store.getLeads().filter((l) => !l.nextFollowUp && (l.lastContact || l.status !== "offen"));
+  if (!candidates.length) { toast("Keine Leads zum Nachtragen gefunden"); return; }
+  if (!confirm(`${candidates.length} kontaktierte(n) Lead(s) ohne Termin ein Follow-up-Datum geben?\n\n(letzter Kontakt + 3 Tage – ältere werden sofort fällig)`)) return;
+  candidates.forEach((l) => {
+    const base = l.lastContact || l.createdAt;
+    Store.updateLead(l.id, { nextFollowUp: base + 3 * 86400000 });
+  });
+  toast(`${candidates.length} Follow-ups nachgetragen ✅`);
+  renderAll();
 }
 
 /* ============================================================
