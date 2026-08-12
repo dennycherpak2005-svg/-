@@ -3,82 +3,577 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lead CRM · Dashboard</title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+  <title>DC Marketing &amp; Automation · Chatbots &amp; Automatisierung, die Kunden gewinnen</title>
+  <meta name="description" content="Maßgeschneiderte Chatbots und Automatisierungen für Ihr Unternehmen: Anfragen sofort beantworten, Leads qualifizieren, Termine buchen – rund um die Uhr. Kostenloses Erstgespräch sichern." />
+  <meta property="og:title" content="DC Marketing & Automation" />
+  <meta property="og:description" content="Während Sie schlafen, gewinnt Ihre Website neue Kunden. Maßgeschneiderte Chatbots & Automatisierung." />
+  <meta property="og:image" content="assets/img/dc-bot.png" />
+  <link rel="icon" type="image/png" href="assets/img/dc-bot-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="brand">
-        <span class="logo">📈</span> Lead&nbsp;CRM
-      </div>
-      <a class="nav-item active" data-view="dashboard"><span class="ico">📊</span> Dashboard</a>
-      <a class="nav-item" data-view="pipeline"><span class="ico">🗂️</span> Pipeline</a>
-      <a class="nav-item" data-view="leads"><span class="ico">👥</span> Alle Leads</a>
-      <div class="spacer"></div>
-      <a class="form-link" href="formular.html" target="_blank">
-        🌐 Öffentliches Lead-Formular<br /><b>formular.html öffnen →</b>
+
+  <!-- ======================= NAVIGATION ======================= -->
+  <header class="nav" id="top">
+    <div class="nav-inner">
+      <a class="brand" href="#top">
+        <img src="assets/img/dc-bot-icon.png" alt="DC Bot Logo" />
+        <span>DC <b>Marketing &amp; Automation</b></span>
       </a>
-    </aside>
+      <nav class="nav-links" id="nav-links">
+        <a href="#leistungen">Leistungen</a>
+        <a href="#chatbots">Chatbots live</a>
+        <a href="#automation">Automatisierung</a>
+        <a href="#zielgruppen">Für wen?</a>
+        <a href="#ablauf">Ablauf</a>
+      </nav>
+      <div class="nav-cta">
+        <a class="btn btn-primary btn-sm" href="#kontakt">Kostenloses Erstgespräch</a>
+      </div>
+      <button class="nav-burger" id="nav-burger" aria-label="Menü öffnen">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
 
-    <!-- Main -->
-    <div class="main">
-      <header class="topbar">
-        <h1 id="view-title">Dashboard</h1>
-        <div class="search">
-          <span class="ico">🔍</span>
-          <input id="global-search" type="text" placeholder="Leads durchsuchen…" />
+  <!-- ======================= HERO ======================= -->
+  <section class="hero">
+    <div class="aurora a1"></div>
+    <div class="aurora a2"></div>
+    <div class="aurora a3"></div>
+    <div class="grid-overlay"></div>
+
+    <div class="hero-inner container">
+      <div class="hero-copy">
+        <div class="eyebrow">
+          <span class="pulse-dot"></span> Chatbots &amp; Automatisierung – maßgeschneidert für Ihr Unternehmen
         </div>
-        <button class="btn btn-primary" id="btn-new-lead">＋ Neuer Lead</button>
-      </header>
+        <h1>
+          Während Sie schlafen,<br />
+          <span class="grad">gewinnt Ihre Website Kunden.</span>
+        </h1>
+        <p class="lead">
+          Wir bauen <b>maßgeschneiderte Chatbots und Automatisierungen</b>, die Anfragen in Sekunden
+          beantworten, Interessenten qualifizieren und Termine buchen – rund um die Uhr,
+          an 365&nbsp;Tagen im Jahr. Damit ab jetzt <b>keine Anfrage mehr verloren geht</b>.
+        </p>
+        <div class="hero-ctas">
+          <button class="btn btn-primary" data-open-chat>▶&nbsp; Chatbot live testen</button>
+          <a class="btn btn-ghost" href="#automation">Automatisierung erleben</a>
+        </div>
+        <ul class="hero-stats">
+          <li><b>24/7</b><span>erreichbar</span></li>
+          <li><b>&lt; 5 Sek.</b><span>Antwortzeit</span></li>
+          <li><b>0</b><span>verpasste Anfragen</span></li>
+        </ul>
+      </div>
 
-      <main class="content">
-        <!-- ===== Dashboard ===== -->
-        <section class="view active" id="view-dashboard">
-          <div class="stats" id="stat-cards"></div>
-          <div class="panel">
-            <div class="panel-head">
-              <h2>🆕 Neueste Leads</h2>
-              <div class="right">
-                <button class="btn btn-sm" id="btn-export">⬇︎ CSV-Export</button>
+      <!-- Auto-playing Chat Vorschau -->
+      <div class="hero-visual">
+        <div class="chip chip-1">⚡ Antwort in 3 Sekunden</div>
+        <div class="chip chip-2">✅ Lead qualifiziert</div>
+        <div class="chip chip-3">📅 Termin gebucht · Sa 10:30</div>
+
+        <div class="chat-frame" id="hero-chat">
+          <div class="chat-head">
+            <div class="chat-avatar"><img src="assets/img/dc-bot-icon.png" alt="DC Assistent" /></div>
+            <div class="chat-title">
+              <b>DC Assistent</b>
+              <span><i class="online-dot"></i> online · antwortet sofort</span>
+            </div>
+          </div>
+          <div class="chat-body" id="hero-chat-body"></div>
+          <div class="chat-input">
+            <span>Ihre Nachricht eingeben …</span>
+            <button aria-hidden="true">➤</button>
+          </div>
+          <div class="chat-powered">Powered by <b>DC Marketing &amp; Automation</b></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Integrations-Marquee -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee-track">
+        <span>💬 WhatsApp</span><span>✉️ E-Mail</span><span>📆 Google Kalender</span><span>📇 CRM-Systeme</span>
+        <span>🌐 Webformulare</span><span>📊 Excel &amp; Sheets</span><span>📸 Instagram</span><span>📅 Outlook</span>
+        <span>💳 Zahlungsanbieter</span><span>☎️ Telefon-Assistent</span>
+        <span>💬 WhatsApp</span><span>✉️ E-Mail</span><span>📆 Google Kalender</span><span>📇 CRM-Systeme</span>
+        <span>🌐 Webformulare</span><span>📊 Excel &amp; Sheets</span><span>📸 Instagram</span><span>📅 Outlook</span>
+        <span>💳 Zahlungsanbieter</span><span>☎️ Telefon-Assistent</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= PAIN / HOOK ======================= -->
+  <section class="section pain">
+    <div class="container">
+      <h2 class="reveal">Kommt Ihnen das bekannt vor?</h2>
+      <div class="pain-grid">
+        <div class="pain-card reveal">
+          <div class="pain-ico">🌙</div>
+          <p><b>Es ist 21:30 Uhr.</b> Ein Kunde schreibt Ihnen – und bekommt keine Antwort.
+          Morgen früh kauft er bei der Konkurrenz.</p>
+        </div>
+        <div class="pain-card reveal">
+          <div class="pain-ico">🔁</div>
+          <p><b>Jeden Tag dieselben 10 Fragen.</b> Öffnungszeiten, Preise, Termine –
+          Ihr Team beantwortet Routinefragen, statt zu verkaufen.</p>
+        </div>
+        <div class="pain-card reveal">
+          <div class="pain-ico">🗂️</div>
+          <p><b>Anfragen überall.</b> E-Mail, Zettel, WhatsApp, Anrufbeantworter –
+          und irgendwann geht die wichtigste unter.</p>
+        </div>
+      </div>
+      <p class="pain-outro reveal">Genau hier setzen wir an. <span class="grad-cyan">Ab jetzt arbeitet Ihr Unternehmen automatisch.</span></p>
+    </div>
+  </section>
+
+  <!-- ======================= LEISTUNGEN ======================= -->
+  <section class="section" id="leistungen">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">Leistungen</div>
+        <h2>Was wir für Sie <span class="grad">automatisieren</span></h2>
+        <p>Kein Baukasten, keine Massenware: Jede Lösung wird individuell für Ihr Unternehmen,
+        Ihre Abläufe und Ihre Kunden entwickelt.</p>
+      </div>
+      <div class="cards-grid">
+        <div class="card reveal">
+          <div class="card-ico">🤖</div>
+          <h3>Maßgeschneiderte Chatbots</h3>
+          <p>Ihr Bot spricht Ihre Sprache: Er kennt Ihre Leistungen, Preise und Öffnungszeiten,
+          beantwortet Kundenfragen sofort – und sieht dabei aus wie Ihre Marke.</p>
+        </div>
+        <div class="card reveal">
+          <div class="card-ico">⚙️</div>
+          <h3>Prozess-Automatisierung</h3>
+          <p>Wiederkehrende Abläufe erledigen sich von selbst: Daten übertragen, Benachrichtigungen
+          senden, Dokumente vorbereiten – fehlerfrei und ohne Ihr Zutun.</p>
+        </div>
+        <div class="card reveal">
+          <div class="card-ico">🎯</div>
+          <h3>Lead-Erfassung &amp; Qualifizierung</h3>
+          <p>Der Bot fragt Anliegen, Budget und Zeitrahmen ab und sortiert Interessenten vor.
+          Sie sprechen nur noch mit den richtigen Kunden.</p>
+        </div>
+        <div class="card reveal">
+          <div class="card-ico">📅</div>
+          <h3>Automatische Terminbuchung</h3>
+          <p>Interessenten buchen direkt im Chat einen freien Termin aus Ihrem Kalender –
+          inklusive Bestätigung und automatischer Erinnerung.</p>
+        </div>
+        <div class="card reveal">
+          <div class="card-ico">✉️</div>
+          <h3>E-Mail &amp; Follow-up-Automation</h3>
+          <p>Kein Lead bleibt liegen: automatische Bestätigungen, Nachfass-Mails und Erinnerungen –
+          zur richtigen Zeit, im richtigen Ton.</p>
+        </div>
+        <div class="card reveal">
+          <div class="card-ico">🔗</div>
+          <h3>Anbindung Ihrer Systeme</h3>
+          <p>CRM, Kalender, E-Mail, WhatsApp, Tabellen: Wir verbinden Ihre Werkzeuge zu einem
+          System, in dem alles automatisch zusammenspielt.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= CHATBOTS LIVE ======================= -->
+  <section class="section section-alt" id="chatbots">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">Chatbots live</div>
+        <h2>Lernen Sie Ihren neuen <span class="grad">digitalen Mitarbeiter</span> kennen</h2>
+        <p>Nicht nur lesen – ausprobieren: Testen Sie unseren Demo-Bot direkt hier auf der Seite.
+        Und sehen Sie, wie unsere Chatbots bei Kunden im Einsatz aussehen.</p>
+      </div>
+
+      <div class="try-banner reveal">
+        <div class="try-copy">
+          <h3>💬 Testen Sie es selbst – jetzt sofort</h3>
+          <p>Unten rechts wartet unser DC&nbsp;Assistent auf Sie. Stellen Sie ihm Fragen,
+          so wie es Ihre Kunden künftig bei Ihnen tun werden.</p>
+        </div>
+        <button class="btn btn-primary" data-open-chat>Chatbot öffnen</button>
+      </div>
+
+      <p class="showcase-title reveal">So sieht es auf den Websites unserer Kunden aus:</p>
+
+      <div class="showcase-grid">
+        <!-- ===== Mockup 1: Immobilien ===== -->
+        <figure class="browser reveal">
+          <div class="browser-bar">
+            <i></i><i></i><i></i>
+            <span class="browser-url">luxus-immobilien.de</span>
+          </div>
+          <div class="site site-immo">
+            <div class="mini-nav">
+              <div class="mini-brand">
+                <img src="assets/img/bot-building.png" alt="" />
+                <span><b>LUXUS</b><small>IMMOBILIEN</small></span>
+              </div>
+              <div class="mini-links"><span class="on">Startseite</span><span>Immobilien</span><span>Kontakt</span></div>
+              <span class="mini-phone navy">📞 0176 453 721</span>
+            </div>
+            <div class="mini-body">
+              <div class="immo-photo"></div>
+              <div class="immo-text">
+                <div class="immo-kicker">WARUM WIR?</div>
+                <div class="immo-h">Ihr Partner für Wohnimmobilien</div>
+                <div class="skel"></div><div class="skel w80"></div><div class="skel w60"></div>
               </div>
             </div>
-            <div id="recent-table"></div>
-          </div>
-        </section>
-
-        <!-- ===== Pipeline ===== -->
-        <section class="view" id="view-pipeline">
-          <div class="pipeline" id="pipeline-board"></div>
-        </section>
-
-        <!-- ===== Alle Leads ===== -->
-        <section class="view" id="view-leads">
-          <div class="panel">
-            <div class="panel-head">
-              <h2>Alle Leads</h2>
-              <div class="right">
-                <button class="btn btn-sm" id="btn-export-2">⬇︎ CSV-Export</button>
+            <!-- Chat Widget -->
+            <div class="mini-chat immo-chat">
+              <div class="mini-chat-head navy-bg">
+                <img src="assets/img/bot-building.png" alt="" />
+                <b>ImmoRegion Assistent</b>
+                <span class="mini-x">⟳&nbsp;&nbsp;✕</span>
               </div>
+              <div class="mini-chat-body">
+                <div class="mini-msg bot">
+                  <img src="assets/img/bot-building.png" alt="" />
+                  <p>Willkommen 👋 Ich unterstütze Sie bei Kauf, Verkauf oder Besichtigungen.</p>
+                </div>
+                <div class="mini-chips">
+                  <span>Ich suche eine Immobilie</span>
+                  <span>Ich möchte verkaufen</span>
+                  <span>Termin vereinbaren</span>
+                </div>
+              </div>
+              <div class="mini-input"><span>Ihre Nachricht eingeben …</span><b class="navy-txt">➤</b></div>
+              <div class="mini-powered">Powered by <b>DC Marketing &amp; Automation</b></div>
             </div>
-            <div class="filter-chips" id="stage-filter"></div>
-            <div id="leads-table"></div>
           </div>
-        </section>
-      </main>
+          <figcaption>
+            <b>Immobilienmakler</b> – Der Assistent qualifiziert Käufer &amp; Verkäufer und vereinbart Besichtigungen, komplett automatisch.
+          </figcaption>
+        </figure>
+
+        <!-- ===== Mockup 2: Dachdecker ===== -->
+        <figure class="browser reveal">
+          <div class="browser-bar">
+            <i></i><i></i><i></i>
+            <span class="browser-url">mueller-meisterbetrieb.de</span>
+          </div>
+          <div class="site site-mueller">
+            <div class="mini-nav">
+              <div class="mini-brand">
+                <img src="assets/img/bot-hammer.png" alt="" />
+                <span><b>MÜLLER</b><small>MEISTERBETRIEB</small></span>
+              </div>
+              <div class="mini-links"><span>Startseite</span><span>Leistungen</span><span>Kontakt</span></div>
+              <span class="mini-phone rust">📞 0176 834 736</span>
+            </div>
+            <div class="mini-hero">
+              <div class="mini-hero-h">QUALITÄT, DIE SCHÜTZT.<br /><em>DACH FÜR DACH.</em></div>
+              <div class="mini-hero-btns"><span class="rust-bg">Kostenloses Angebot</span><span class="outline">Unsere Leistungen</span></div>
+            </div>
+            <!-- Chat Widget -->
+            <div class="mini-chat mueller-chat">
+              <div class="mini-chat-head rust-bg">
+                <img src="assets/img/bot-hammer.png" alt="" />
+                <b>Müller Bot</b>
+                <span class="mini-x">⟳&nbsp;&nbsp;✕</span>
+              </div>
+              <div class="mini-chat-body">
+                <div class="mini-msg bot">
+                  <img src="assets/img/bot-hammer.png" alt="" />
+                  <p>Hallo, wie kann ich helfen?</p>
+                </div>
+                <div class="mini-msg user rust-user">
+                  <p>Wann haben Sie geöffnet?</p>
+                </div>
+                <div class="mini-msg bot">
+                  <img src="assets/img/bot-hammer.png" alt="" />
+                  <p>Unsere Öffnungszeiten:<br />• Mo–Fr: 09:00 – 18:00 Uhr<br />• Sa: 10:00 – 14:00 Uhr<br />• So: Geschlossen</p>
+                </div>
+              </div>
+              <div class="mini-input"><span>Ihre Frage eingeben …</span><b class="rust-txt">➤</b></div>
+              <div class="mini-powered">Powered by <b>DC Marketing &amp; Automation</b></div>
+            </div>
+          </div>
+          <figcaption>
+            <b>Handwerksbetrieb</b> – Der Bot beantwortet Routinefragen und nimmt Angebotsanfragen auf, während das Team auf dem Dach steht.
+          </figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= AUTOMATION ======================= -->
+  <section class="section" id="automation">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">Automatisierung erleben</div>
+        <h2>Sehen Sie zu, wie aus einer Anfrage <span class="grad">ein Termin wird</span></h2>
+        <p>Das passiert nachts um 22:47 Uhr auf einer Website mit DC-Automatisierung –
+        ganz ohne, dass jemand eingreift. Drücken Sie auf Play.</p>
+      </div>
+
+      <div class="journey reveal" id="journey">
+        <div class="journey-head">
+          <button class="btn btn-primary btn-sm" id="journey-play">▶&nbsp; Abspielen</button>
+          <div class="journey-progress"><i id="journey-bar"></i></div>
+        </div>
+        <ol class="journey-steps">
+          <li class="jstep" data-step="1">
+            <div class="jtime">22:47</div>
+            <div class="jdot"></div>
+            <div class="jcard">
+              <b>💬 Anfrage kommt rein</b>
+              <p>Familie Weber schreibt im Chat: <em>„Wir suchen eine 4-Zimmer-Wohnung mit Balkon.“</em></p>
+            </div>
+          </li>
+          <li class="jstep" data-step="2">
+            <div class="jtime">22:47</div>
+            <div class="jdot"></div>
+            <div class="jcard">
+              <b>🎯 Chatbot qualifiziert</b>
+              <p>Der Bot fragt Budget, Stadtteil und Einzugstermin ab. Ergebnis: <span class="tag-green">Lead-Score 92 / 100</span></p>
+            </div>
+          </li>
+          <li class="jstep" data-step="3">
+            <div class="jtime">22:48</div>
+            <div class="jdot"></div>
+            <div class="jcard">
+              <b>📇 CRM aktualisiert sich</b>
+              <p>Der Lead wird automatisch angelegt – mit allen Daten, Stufe: <span class="tag-violet">„Qualifiziert“</span>. Nichts wird abgetippt.</p>
+            </div>
+          </li>
+          <li class="jstep" data-step="4">
+            <div class="jtime">22:48</div>
+            <div class="jdot"></div>
+            <div class="jcard">
+              <b>✉️ E-Mail &amp; Terminvorschlag</b>
+              <p>Familie Weber erhält sofort eine persönliche Bestätigung – mit 3 freien Besichtigungsterminen aus dem Kalender.</p>
+            </div>
+          </li>
+          <li class="jstep" data-step="5">
+            <div class="jtime">08:12</div>
+            <div class="jdot"></div>
+            <div class="jcard">
+              <b>📅 Termin bestätigt</b>
+              <p>Am Morgen wählt die Familie <b>Dienstag, 14:30 Uhr</b>. Kalendereintrag und Erinnerungen gehen automatisch an beide Seiten.</p>
+            </div>
+          </li>
+        </ol>
+        <div class="journey-final" id="journey-final">
+          <b>0 manuelle Handgriffe.</b> Sie haben geschlafen – Ihr System nicht. 😴✨
+        </div>
+      </div>
+
+      <!-- Interaktive Demos -->
+      <div class="demo-cta reveal">
+        <div class="demo-card">
+          <div class="demo-ico">🗂️</div>
+          <div>
+            <h3>Lead-CRM: die Demo zum Anfassen</h3>
+            <p>Öffnen Sie unser Demo-CRM und sehen Sie, wo automatisch erfasste Anfragen landen –
+            mit Pipeline, Lead-Details und CSV-Export.</p>
+          </div>
+          <a class="btn btn-ghost" href="crm-demo.html" target="_blank" rel="noopener">CRM öffnen ↗</a>
+        </div>
+        <div class="demo-card">
+          <div class="demo-ico">✉️</div>
+          <div>
+            <h3>Probieren Sie die Automatisierung aus</h3>
+            <p>Füllen Sie das Demo-Formular aus – und beobachten Sie, wie Ihr Eintrag
+            <b>sofort automatisch</b> im CRM erscheint. Genau so fühlt sich Automatisierung an.</p>
+          </div>
+          <a class="btn btn-ghost" href="formular.html" target="_blank" rel="noopener">Formular testen ↗</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ZIELGRUPPEN ======================= -->
+  <section class="section section-alt" id="zielgruppen">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">Für wen?</div>
+        <h2>Perfekt für jedes Unternehmen, das <span class="grad">Anfragen bekommt</span></h2>
+        <p>Wenn Kunden Sie anrufen, anschreiben oder Termine brauchen, lohnt sich Automatisierung –
+        vom Ein-Mann-Betrieb bis zum Mittelstand.</p>
+      </div>
+      <div class="audience-grid">
+        <div class="aud-card reveal">
+          <img src="assets/img/bot-hammer.png" alt="" class="aud-img" />
+          <h3>Handwerk &amp; Bau</h3>
+          <p>Angebotsanfragen und Notfälle automatisch erfassen – auch wenn das ganze Team auf der Baustelle steht.</p>
+        </div>
+        <div class="aud-card reveal">
+          <img src="assets/img/bot-building.png" alt="" class="aud-img" />
+          <h3>Immobilien</h3>
+          <p>Interessenten qualifizieren, Objekte vorstellen und Besichtigungen buchen – rund um die Uhr.</p>
+        </div>
+        <div class="aud-card reveal">
+          <div class="aud-emoji">🩺</div>
+          <h3>Praxen &amp; Gesundheit</h3>
+          <p>Terminanfragen und häufige Fragen automatisch beantworten und Ihr Empfangsteam spürbar entlasten.</p>
+        </div>
+        <div class="aud-card reveal">
+          <div class="aud-emoji">💼</div>
+          <h3>Kanzleien &amp; Beratung</h3>
+          <p>Erstanfragen strukturiert aufnehmen und Mandanten schneller dem richtigen Ansprechpartner zuordnen.</p>
+        </div>
+        <div class="aud-card reveal">
+          <div class="aud-emoji">🍽️</div>
+          <h3>Gastronomie &amp; Studios</h3>
+          <p>Reservierungen, Öffnungszeiten, Preise – beantwortet, bevor bei Ihnen überhaupt das Telefon klingelt.</p>
+        </div>
+        <div class="aud-card reveal">
+          <img src="assets/img/bot-home.png" alt="" class="aud-img" />
+          <h3>Lokale Dienstleister &amp; Shops</h3>
+          <p>Produktfragen, Verfügbarkeiten und Aufträge automatisch abwickeln – und nebenbei Stammkunden gewinnen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= VORTEILE ======================= -->
+  <section class="section" id="vorteile">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">Ihr Nutzen</div>
+        <h2>Das haben Sie <span class="grad">konkret davon</span></h2>
+      </div>
+
+      <div class="counters reveal">
+        <div class="counter"><b data-count="24">0</b><span>/7 für Ihre Kunden erreichbar</span></div>
+        <div class="counter"><b data-count="80">0</b><span>% der Routineanfragen automatisiert*</span></div>
+        <div class="counter"><b data-count="10">0</b><span>+ Stunden pro Woche zurückgewonnen*</span></div>
+        <div class="counter"><b data-count="100">0</b><span>% Ihrer Anfragen sauber erfasst</span></div>
+      </div>
+      <p class="footnote reveal">*Typische Werte unserer Projekte – Ihr Potenzial ermitteln wir im kostenlosen Erstgespräch.</p>
+
+      <div class="ba-grid">
+        <div class="ba-card ba-before reveal">
+          <h3>❌ Ohne Automatisierung</h3>
+          <ul>
+            <li>Anfragen nach Feierabend bleiben unbeantwortet</li>
+            <li>Interessenten warten Stunden – und springen ab</li>
+            <li>Daten werden von Hand abgetippt, Fehler passieren</li>
+            <li>Terminvereinbarung kostet 5 Anrufe und 3 E-Mails</li>
+            <li>Sie arbeiten <b>im</b> Unternehmen statt <b>am</b> Unternehmen</li>
+          </ul>
+        </div>
+        <div class="ba-card ba-after reveal">
+          <h3>✅ Mit DC Marketing &amp; Automation</h3>
+          <ul>
+            <li>Jede Anfrage wird in Sekunden beantwortet – 24/7</li>
+            <li>Heiße Leads werden erkannt und sofort bedient</li>
+            <li>Alle Daten landen automatisch und fehlerfrei im System</li>
+            <li>Termine buchen sich von selbst, inkl. Erinnerung</li>
+            <li>Sie gewinnen Zeit für das, was wirklich Umsatz bringt</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= ABLAUF ======================= -->
+  <section class="section section-alt" id="ablauf">
+    <div class="container">
+      <div class="section-head reveal">
+        <div class="kicker">So starten wir</div>
+        <h2>In 4 Schritten zu Ihrem <span class="grad">digitalen Mitarbeiter</span></h2>
+      </div>
+      <div class="steps-grid">
+        <div class="step reveal">
+          <div class="step-num">01</div>
+          <h3>Kostenloses Erstgespräch</h3>
+          <p>Wir hören zu: Wo geht bei Ihnen Zeit verloren? Wo bleiben Anfragen liegen?
+          30 Minuten, unverbindlich, ohne Technik-Kauderwelsch.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">02</div>
+          <h3>Konzept &amp; Design</h3>
+          <p>Sie erhalten einen klaren Plan: was automatisiert wird, wie Ihr Chatbot aussieht
+          und spricht – und was es kostet. Transparent und fair.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">03</div>
+          <h3>Umsetzung &amp; Integration</h3>
+          <p>Wir bauen, verbinden und testen alles für Sie – Website, Kalender, CRM, E-Mail.
+          Sie müssen nichts installieren und nichts lernen.</p>
+        </div>
+        <div class="step reveal">
+          <div class="step-num">04</div>
+          <h3>Betreuung &amp; Optimierung</h3>
+          <p>Ihr System wächst mit: Wir überwachen, pflegen und verbessern laufend –
+          damit es jeden Monat ein Stück besser verkauft.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= KONTAKT ======================= -->
+  <section class="section" id="kontakt">
+    <div class="container">
+      <div class="contact-card reveal">
+        <div class="aurora a1"></div>
+        <img class="contact-bot" src="assets/img/dc-bot.png" alt="DC Bot" />
+        <h2>Bereit für ein Unternehmen,<br />das <span class="grad-cyan">nie schläft</span>?</h2>
+        <p>Sichern Sie sich Ihr <b>kostenloses Erstgespräch</b>: In 30 Minuten zeigen wir Ihnen,
+        wie viel Potenzial in Ihren Abläufen steckt – unverbindlich und verständlich erklärt.</p>
+        <div class="contact-ctas">
+          <a class="btn btn-light" href="mailto:dennycherpak2005@gmail.com?subject=Kostenloses%20Erstgespr%C3%A4ch%20%E2%80%93%20DC%20Marketing%20%26%20Automation">📩&nbsp; Erstgespräch anfragen</a>
+          <button class="btn btn-outline-light" data-open-chat>💬&nbsp; Erst den Chatbot fragen</button>
+        </div>
+        <div class="contact-note">dennycherpak2005@gmail.com&nbsp;·&nbsp;Antwort innerhalb von 24 Stunden</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= FOOTER ======================= -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <a class="brand" href="#top">
+        <img src="assets/img/dc-bot-icon.png" alt="" />
+        <span>DC <b>Marketing &amp; Automation</b></span>
+      </a>
+      <nav class="footer-links">
+        <a href="#leistungen">Leistungen</a>
+        <a href="#chatbots">Chatbots</a>
+        <a href="#automation">Automatisierung</a>
+        <a href="crm-demo.html" target="_blank" rel="noopener">CRM-Demo</a>
+        <a href="#kontakt">Kontakt</a>
+      </nav>
+      <div class="footer-copy">© <span id="year">2026</span> DC Marketing &amp; Automation · Maßgeschneiderte Chatbots &amp; Automatisierung</div>
+    </div>
+  </footer>
+
+  <!-- ======================= CHAT WIDGET (echt bedienbar) ======================= -->
+  <div class="widget" id="widget" hidden>
+    <div class="chat-frame widget-frame">
+      <div class="chat-head">
+        <div class="chat-avatar"><img src="assets/img/dc-bot-icon.png" alt="DC Assistent" /></div>
+        <div class="chat-title">
+          <b>DC Assistent</b>
+          <span><i class="online-dot"></i> online · Live-Demo</span>
+        </div>
+        <button class="chat-close" id="widget-close" aria-label="Chat schließen">✕</button>
+      </div>
+      <div class="chat-body" id="widget-body"></div>
+      <div class="chat-chips" id="widget-chips"></div>
+      <form class="chat-input chat-input-live" id="widget-form">
+        <input type="text" id="widget-input" placeholder="Ihre Nachricht eingeben …" autocomplete="off" />
+        <button type="submit" aria-label="Senden">➤</button>
+      </form>
+      <div class="chat-powered">Powered by <b>DC Marketing &amp; Automation</b></div>
     </div>
   </div>
+  <button class="launcher" id="launcher" aria-label="Chat öffnen">
+    <img src="assets/img/dc-bot-icon.png" alt="" />
+    <span class="launcher-badge" id="launcher-badge">1</span>
+  </button>
 
-  <!-- ===== Lead Detail / Edit Modal ===== -->
-  <div class="overlay" id="overlay">
-    <div class="modal" id="modal"></div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-
-  <script src="js/store.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script src="js/site.js"></script>
 </body>
 </html>

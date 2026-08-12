@@ -1,49 +1,49 @@
-# 📈 Lead CRM – Dashboard
+# DC Marketing & Automation – Website
 
-Ein leichtgewichtiges Lead-Management-/CRM-System in **reinem HTML, CSS & JavaScript**.
-Kein Build, keine Abhängigkeiten, kein Server nötig – einfach im Browser öffnen.
+Moderne Unternehmens-Website für **DC Marketing & Automation**: maßgeschneiderte
+Chatbots und Automatisierungen für kleine und mittlere Unternehmen.
 
-## ✨ Funktionen
+## Seiten
 
-- **Öffentliches Lead-Formular** (`formular.html`) – neue Anfragen landen automatisch im CRM
-- **Dashboard** mit Live-Statistiken (Leads gesamt, neu, offen, gewonnen, Conversion-Rate)
-- **Pipeline-Board** mit 6 Stufen und **Drag & Drop** (Neu → Kontaktiert → Qualifiziert → Angebot → Gewonnen/Verloren)
-- **Lead-Tabelle** mit Suche und Status-Filter
-- **Detailansicht** je Lead: bearbeiten, Status ändern, **Notizen & Verlauf**, löschen
-- **Manuelles Anlegen** von Leads im Dashboard
-- **CSV-Export** aller Leads
-- **Speicherung lokal im Browser** (`localStorage`) – beim ersten Start mit Beispieldaten befüllt
-- Live-Synchronisation zwischen offenen Tabs
+| Datei | Beschreibung |
+|---|---|
+| `index.html` | Haupt-Website: Leistungen, Live-Chatbot-Demo, Kunden-Vorschauen, animierte Lead-Journey, Kontakt |
+| `crm-demo.html` | Interaktive Lead-CRM-Demo (Dashboard, Pipeline, Lead-Liste) |
+| `formular.html` | Öffentliches Demo-Lead-Formular – Einträge erscheinen automatisch im CRM |
 
-## 🚀 Loslegen
+## Highlights der Website
 
-Einfach die Dateien öffnen:
+- **Live-Chatbot-Widget** unten rechts – Besucher können den DC-Assistenten direkt ausprobieren
+- **Automatisch ablaufende Chat-Konversation** im Hero-Bereich
+- **Kunden-Vorschauen**: originalgetreue Chatbot-Mockups (Immobilienmakler & Handwerksbetrieb)
+- **Animierte Lead-Journey**: von der Anfrage um 22:47 Uhr bis zum bestätigten Termin – 0 Handgriffe
+- **CRM + Formular als anfassbare Automatisierungs-Demo** (localStorage, kein Backend nötig)
+- Responsive, dunkles Design mit Animationen – ohne Framework, nur HTML/CSS/JS
+
+## Struktur
 
 ```
-index.html      → das CRM-Dashboard
-formular.html   → das öffentliche Lead-Formular
+index.html          Haupt-Website
+crm-demo.html       CRM-Demo
+formular.html       Lead-Formular-Demo
+css/site.css        Styles der Haupt-Website
+css/styles.css      Styles der CRM-Demo
+js/site.js          Interaktionen der Haupt-Website (Chatbot, Animationen)
+js/store.js         Gemeinsame Datenschicht (localStorage) für CRM + Formular
+js/dashboard.js     CRM-Dashboard-Logik
+assets/img/         Logos & Chatbot-Avatare
 ```
 
-Doppelklick auf `index.html` genügt. Optional lokal mit einem kleinen Webserver:
+## Lokal ansehen
+
+Einfach `index.html` im Browser öffnen – oder einen kleinen Server starten:
 
 ```bash
 python3 -m http.server 8000
-# dann http://localhost:8000 öffnen
+# → http://localhost:8000
 ```
 
-## 🗂 Projektstruktur
+## Offene Punkte
 
-```
-index.html        Dashboard (Stats, Pipeline, Lead-Tabelle, Detail-Modal)
-formular.html     Öffentliches Lead-Eingangsformular
-css/styles.css    Styling
-js/store.js       Datenschicht (localStorage) – von beiden Seiten genutzt
-js/dashboard.js   UI-Logik des Dashboards
-```
-
-## 💡 Hinweis zur Speicherung
-
-Die Daten liegen im `localStorage` deines Browsers. Damit das Formular und das
-Dashboard dieselben Leads sehen, müssen beide über **denselben Origin** geöffnet
-werden (z. B. beide über `http://localhost:8000`). Möchtest du Leads geräte­übergreifend
-empfangen, lässt sich `js/store.js` später leicht gegen ein echtes Backend tauschen.
+- Impressum & Datenschutzerklärung ergänzen (Pflicht vor Veröffentlichung in DE)
+- Eigene Domain & Hosting (z. B. GitHub Pages) einrichten
