@@ -182,7 +182,7 @@
         "sendTo": "={{ $json.Email }}",
         "subject": "=Kurze Nachfrage zu {{ $json.Firma }}",
         "emailType": "text",
-        "message": "={{ $json.Anrede }},\n\nich hatte Ihnen vor ein paar Tagen geschrieben – falls es untergegangen ist, kein Problem.\n\nKurz die Idee nochmal: ein kleiner Assistent für die Website von {{ $json.Firma }}, der Kundenanfragen rund um die Uhr automatisch beantwortet – auch abends und am Wochenende, wenn bei Ihnen gerade niemand ans Telefon kann.\n\nEin 2-Minuten-Beispiel sehen Sie hier:\nhttps://marketing-automation.onepage.me\n\nSoll ich Ihnen unverbindlich zeigen, wie das für {{ $json.Firma }} aussehen würde? Ein kurzes „ja\" reicht.\n\nViele Grüße\nDenny Cherpak\nDC Marketing & Automation\nhttps://marketing-automation.onepage.me",
+        "message": "={{ $json.Anrede }},\n\nich hatte Ihnen vor ein paar Tagen geschrieben – falls es untergegangen ist, kein Problem.\n\nKurz die Idee nochmal: ein kleiner Assistent für die Website von {{ $json.Firma }}, der Kundenanfragen rund um die Uhr automatisch beantwortet – auch abends und am Wochenende, wenn bei Ihnen gerade niemand ans Telefon kann.\n\nEin 2-Minuten-Beispiel sehen Sie hier:\nhttps://dc-marketing-automation.onepage.me\n\nSoll ich Ihnen unverbindlich zeigen, wie das für {{ $json.Firma }} aussehen würde? Ein kurzes „ja\" reicht.\n\nViele Grüße\nDenny Cherpak\nDC Marketing & Automation\nhttps://dc-marketing-automation.onepage.me",
         "options": {
           "appendAttribution": false,
           "senderName": "Denny Cherpak"

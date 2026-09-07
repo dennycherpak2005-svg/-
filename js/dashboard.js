@@ -897,8 +897,14 @@ function initN8n() {
   };
   $("#btn-n8n-bulk").onclick = () => {
     const list = filtered().filter((l) => l.email || l.website);
-    if (!list.length) { toast("Keine sendbaren Leads in der aktuellen Liste"); return; }
-    if (confirm(`${list.length} Lead(s) an n8n senden (Erstmail)?`)) pushToN8n(list, "first");
+    // Nur noch nicht angeschriebene zählen, damit die Zahl stimmt (Doppel-Schutz greift eh in pushToN8n).
+    const sendable = list.filter((l) => !isOptedOut(l) && !alreadyColdMailed(l));
+    if (!sendable.length) { toast("Keine neuen sendbaren Leads in der Liste"); return; }
+    const ans = prompt(`Wie viele Erstmails jetzt senden?\n\n${sendable.length} noch nicht angeschriebene Leads in der Liste.\nZahl eingeben (z. B. 20) – oder leer lassen = alle.`, "20");
+    if (ans === null) return; // Abbruch
+    const n = parseInt(ans, 10);
+    const batch = (!ans.trim() || isNaN(n) || n <= 0) ? sendable : sendable.slice(0, n);
+    pushToN8n(batch, "first");
   };
   if ($("#btn-followup-due")) $("#btn-followup-due").onclick = () => {
     const list = Store.getLeads().filter((l) => followDue(l) && (l.email || l.website));
