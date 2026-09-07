@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Akquise-Cockpit</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260625i" />
+  <link rel="stylesheet" href="css/styles.css?v=20260625j" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 </head>
 <body>
@@ -215,8 +215,14 @@
   <div class="overlay" id="overlay"><div class="modal" id="modal"></div></div>
   <div class="toast" id="toast"></div>
 
-  <script src="js/store.js?v=20260625i"></script>
-  <script src="js/dashboard.js?v=20260625i"></script>
-  <script src="js/finder.js?v=20260625i"></script>
+  <!-- Firebase (Cloud-Sync + Login) -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+  <script src="js/store.js?v=20260625j"></script>
+  <script src="js/dashboard.js?v=20260625j"></script>
+  <script src="js/finder.js?v=20260625j"></script>
+  <script src="js/cloud.js?v=20260625j"></script>
 </body>
 </html>
