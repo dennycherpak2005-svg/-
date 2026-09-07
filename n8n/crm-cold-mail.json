@@ -180,9 +180,9 @@
     {
       "parameters": {
         "sendTo": "={{ $json.Email }}",
-        "subject": "=Frage zu {{ $json.Firma }}",
+        "subject": "=Kurze Frage zu {{ $json.Firma }}",
         "emailType": "text",
-        "message": "={{ $json.Anrede }},\\n\\nkurze Frage: Was passiert bei {{ $json.Firma }}, wenn abends oder am Wochenende eine Kundenanfrage reinkommt?\\n\\nBei vielen Betrieben bleibt sie bis zum nächsten Werktag liegen – und der Interessent ist bis dahin oft schon woanders.\\n\\nIch richte Betrieben einen kleinen Assistenten für die Website ein, der genau solche Anfragen rund um die Uhr beantwortet und die Kontaktdaten festhält. Fertig eingerichtet, kein Aufwand für Sie.\\n\\nWäre das für {{ $json.Firma }} einen kurzen Blick wert? Dann schicke ich Ihnen ein 2-Minuten-Beispiel – ganz unverbindlich.\\n\\nViele Grüße\\nDenny Cherpak\\nDC Marketing & Automation",
+        "message": "={{ $json.Anrede }},\n\nmein Name ist Denny Cherpak. Ich habe mir {{ $json.Firma }} kurz angesehen und hätte eine ehrliche Frage:\n\nWas passiert bei {{ $json.Firma }}, wenn abends oder am Wochenende eine Kundenanfrage reinkommt? Bei den meisten Betrieben bleibt sie bis zum nächsten Werktag liegen – und der Interessent ist bis dahin oft schon beim Wettbewerber.\n\nIch richte Betrieben einen Assistenten für die Website ein, der genau solche Anfragen rund um die Uhr automatisch beantwortet und die Kontaktdaten festhält – fertig eingerichtet, ohne Aufwand für Sie.\n\nWie das aussieht und was es für {{ $json.Firma }} bringt, sehen Sie hier in 2 Minuten:\nhttps://marketing-automation.onepage.me\n\nWenn das einen Blick wert ist, antworten Sie einfach kurz auf diese Mail – ganz unverbindlich.\n\nViele Grüße\nDenny Cherpak\nDC Marketing & Automation\nhttps://marketing-automation.onepage.me",
         "options": {
           "appendAttribution": false,
           "senderName": "Denny Cherpak"
