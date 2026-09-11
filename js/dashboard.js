@@ -751,7 +751,17 @@ function switchView(view) {
   $$(".nav-item").forEach((n) => n.classList.toggle("active", n.dataset.view === view));
   $$(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
   $("#view-title").textContent = TITLES[view];
+  toggleSidebar(false); // Handy-Menü nach Auswahl schließen
   renderAll();
+}
+
+/* ---------- Handy-Menü (ausklappbare Seitenleiste) ---------- */
+function toggleSidebar(open) {
+  const sb = $(".sidebar"), bd = $("#sidebar-backdrop");
+  if (!sb) return;
+  const willOpen = open === undefined ? !sb.classList.contains("open") : open;
+  sb.classList.toggle("open", willOpen);
+  if (bd) bd.classList.toggle("show", willOpen);
 }
 
 /** Alles neu rendern (inkl. aktive Listen). */
@@ -973,6 +983,8 @@ function restoreBackup(file) {
 
 /* ---------- Wiring ---------- */
 $$(".nav-item").forEach((n) => n.addEventListener("click", () => switchView(n.dataset.view)));
+if ($("#menu-toggle")) $("#menu-toggle").onclick = () => toggleSidebar();
+if ($("#sidebar-backdrop")) $("#sidebar-backdrop").onclick = () => toggleSidebar(false);
 $("#btn-backup").onclick = exportBackup;
 $("#restore-file").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) restoreBackup(f); e.target.value = ""; });
 $("#btn-new-lead").onclick = newLead;
