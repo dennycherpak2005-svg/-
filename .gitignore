@@ -1,3 +1,4 @@
 crm-export.zip
 *.zip
 .DS_Store
+.netlify/
