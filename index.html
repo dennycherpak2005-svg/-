@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Akquise-Cockpit</title>
-  <link rel="stylesheet" href="css/styles.css?v=20260625l" />
+  <link rel="stylesheet" href="css/styles.css?v=20260922a" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎯</text></svg>" />
 </head>
 <body>
@@ -102,7 +102,11 @@
               <div class="finder-body">
                 <div class="row2">
                   <div class="field"><label>Branche</label><select id="fd-branche"></select></div>
-                  <div class="field"><label>Stadt / Ort</label><input id="fd-stadt" placeholder="z. B. Berlin" /></div>
+                  <div class="field"><label>Stadt / Ort</label><input id="fd-stadt" placeholder="z. B. Kappelrodeck" /></div>
+                </div>
+                <div class="row2">
+                  <div class="field"><label>Umkreis</label><select id="fd-radius"></select></div>
+                  <div class="field"><label>&nbsp;</label><div class="muted small" style="padding-top:8px">Ketten und Konzerne werden automatisch aussortiert.</div></div>
                 </div>
                 <div class="finder-actions">
                   <button class="btn btn-primary" id="fd-search">🔍 Firmen suchen</button>
@@ -155,7 +159,7 @@
               <div class="finder-actions">
                 <button class="btn btn-primary" id="n8n-save">Speichern</button>
                 <button class="btn" id="n8n-test">🧪 Test senden</button>
-                <label class="inline-check"><input type="checkbox" id="n8n-auto" /> Neue Leads <b>mit E-Mail oder Website</b> automatisch senden</label>
+                <span class="muted small">Automatischer Versand ist abgeschaltet – Leads gehen nur über „🚀 An n8n" mit Vorschau raus.</span>
               </div>
               <div class="n8n-info">
                 <b>So funktioniert's:</b> Mein Tool schickt pro Lead ein JSON an deinen Webhook. Deine n8n-Automation übernimmt das Versenden.
@@ -222,9 +226,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 
-  <script src="js/store.js?v=20260625l"></script>
-  <script src="js/dashboard.js?v=20260625l"></script>
-  <script src="js/finder.js?v=20260625l"></script>
-  <script src="js/cloud.js?v=20260625l"></script>
+  <script src="js/store.js?v=20260922a"></script>
+  <script src="js/dashboard.js?v=20260922a"></script>
+  <script src="js/finder.js?v=20260922a"></script>
+  <script src="js/cloud.js?v=20260922a"></script>
 </body>
 </html>

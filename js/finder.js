@@ -40,6 +40,46 @@ const OVERPASS_ENDPOINTS = [
   "https://overpass.kumi.systems/api/interpreter",
 ];
 
+/* ---------- Ketten- und Adress-Filter ----------
+   Konzerne und Ketten lesen Cold Mails nie beim Entscheider.
+   Wird im Finder UND vor dem n8n-Versand geprüft (auch für alte Leads). */
+const CHAIN_DOMAINS = [
+  "marriott", "hilton", "ihg.com", "crowneplaza", "holidayinn", "accor", "ibis", "novotel",
+  "mercure", "steigenberger", "hrewards", "hotelbb", "hotel-bb", "novum-hotels", "dormero",
+  "h-hotels", "atlantic-hotels", "motel-one", "motelone", "nh-hotels", "nh-collection",
+  "radissonhotels", "radisson", "bestwestern", "leonardo-hotels", "ringhotels", "ghotel",
+  "prizeotel", "premierinn", "a-o.com", "aohostels", "meininger", "maritim", "dorint",
+  "lindnerhotels", "achat-hotels", "intercityhotel", "arcotel", "wyndham", "hyatt", "sheraton",
+  "westin", "kempinski", "fourseasons", "sofitel", "pullman", "tibits",
+  "mcdonalds", "burgerking", "starbucks", "vapiano", "subway", "kfc", "nordsee.com",
+  "fielmann", "apollo.de", "rossmann", "dm.de", "medbase", "aok", "gothaer", "barmenia",
+  "wuestenrot", "allianz", "ergo.de", "huk", "debeka", "sparkasse", "volksbank",
+];
+const BAD_LOCALPARTS = [
+  "privacy", "datenschutz", "dataprotection", "dpo", "jobs", "job", "karriere", "career",
+  "bewerbung", "hr", "personal", "presse", "press", "noreply", "no-reply", "donotreply",
+  "newsletter", "abuse", "postmaster", "webmaster", "rechnung", "invoice", "buchhaltung",
+];
+function domainOf(s) {
+  s = String(s || "").toLowerCase().trim();
+  if (s.includes("@")) s = s.split("@").pop();
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[/?#:]/)[0];
+  return s;
+}
+/** Grund, warum ein Lead eine Kette/Konzern-Adresse ist – oder "" wenn sauber. */
+function chainReason(lead) {
+  if (lead.chain) return "Kette (" + lead.chain + ")";
+  const doms = [domainOf(lead.email), domainOf(lead.website)].filter(Boolean);
+  const hit = CHAIN_DOMAINS.find((c) => doms.some((d) => d.includes(c)));
+  if (hit) return "Konzern/Kette (" + hit + ")";
+  const local = String(lead.email || "").toLowerCase().split("@")[0];
+  if (local && BAD_LOCALPARTS.includes(local)) return "ungeeignete Adresse (" + local + "@)";
+  return "";
+}
+window.chainReason = chainReason;
+
+const RADIUS_OPTIONS = [5, 10, 15, 25, 50];
+
 /* ---------- Finder-Konfig (gespeicherte Suchen + Auto) ---------- */
 function readFinder() {
   try { return JSON.parse(localStorage.getItem(FINDER_KEY)) || { queue: [], auto: false, interval: 10, log: [] }; }
@@ -51,23 +91,28 @@ const finder = { lastResults: [], timer: null, running: false };
 
 /* ---------- Geocoding: Ort → Bounding-Box ---------- */
 async function geocode(stadt) {
-  const url = `${NOMINATIM}?format=jsonv2&limit=1&q=${encodeURIComponent(stadt)}`;
+  const url = `${NOMINATIM}?format=jsonv2&limit=1&addressdetails=1&q=${encodeURIComponent(stadt)}`;
   const res = await fetch(url, { headers: { "Accept": "application/json" } });
   if (!res.ok) throw new Error("Ort-Suche fehlgeschlagen");
   const data = await res.json();
   if (!data.length) throw new Error(`Ort „${stadt}" nicht gefunden`);
-  const bb = data[0].boundingbox.map(Number); // [south, north, west, east]
-  return { south: bb[0], north: bb[1], west: bb[2], east: bb[3], displayName: data[0].display_name };
+  const d = data[0];
+  return {
+    lat: Number(d.lat), lon: Number(d.lon),
+    country: ((d.address && d.address.country_code) || "").toUpperCase(),
+    displayName: d.display_name,
+  };
 }
 
 /* ---------- Overpass-Abfrage bauen + ausführen ---------- */
-function buildOverpass(filters, box) {
-  const { south, west, north, east } = box;
-  const bbox = `(${south},${west},${north},${east})`;
+/** Sucht im echten Umkreis (km) um den Ortsmittelpunkt – nicht mehr in der
+ *  Bounding-Box. (Hamburg reichte per Box wegen Neuwerk bis Cuxhaven/Nordsee.) */
+function buildOverpass(filters, center, radiusKm) {
+  const around = `(around:${Math.round(radiusKm * 1000)},${center.lat},${center.lon})`;
   const lines = filters.map(([k, v]) =>
-    `  node["${k}"="${v}"]${bbox};\n  way["${k}"="${v}"]${bbox};`
+    `  node["${k}"="${v}"]${around};\n  way["${k}"="${v}"]${around};`
   ).join("\n");
-  return `[out:json][timeout:25];\n(\n${lines}\n);\nout center tags 120;`;
+  return `[out:json][timeout:25];\n(\n${lines}\n);\nout center tags 200;`;
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -95,7 +140,7 @@ async function overpass(query) {
 }
 
 /** OSM-Element → Lead. */
-function elementToLead(el, stadt) {
+function elementToLead(el, stadt, country) {
   const t = el.tags || {};
   const name = t.name;
   if (!name) return null;
@@ -108,27 +153,35 @@ function elementToLead(el, stadt) {
     email: t.email || t["contact:email"] || "",
     website: t.website || t["contact:website"] || "",
     location: [street, city].filter(Boolean).join(", "),
+    city,
+    country: (t["addr:country"] || country || "").toUpperCase(),
+    chain: t.brand || (t["brand:wikidata"] ? "Marke" : "") || "",
     source: "OSM",
     temperature: "kalt",
     status: "offen",
   };
 }
 
-/** Komplette Suche für eine Branche+Stadt-Kombi. */
-async function runSearch(brancheLabel, stadt) {
+/** Komplette Suche für eine Branche+Stadt-Kombi im Umkreis. Ketten fliegen raus. */
+async function runSearch(brancheLabel, stadt, radiusKm = 10) {
   const branche = BRANCHEN.find((b) => b.label === brancheLabel) || BRANCHEN[0];
-  const box = await geocode(stadt);
-  const elements = await overpass(buildOverpass(branche.filters, box));
+  const center = await geocode(stadt);
+  const elements = await overpass(buildOverpass(branche.filters, center, radiusKm));
   const seen = new Set();
   const leads = [];
+  let chains = 0;
   elements.forEach((el) => {
-    const lead = elementToLead(el, stadt);
+    const lead = elementToLead(el, stadt, center.country);
     if (!lead) return;
+    if (chainReason(lead)) { chains++; return; }
+    delete lead.chain;
     const key = lead.name + "|" + lead.phone;
     if (seen.has(key)) return;
     seen.add(key);
     leads.push(lead);
   });
+  leads.chainsRemoved = chains;
+  leads.country = center.country;
   return leads;
 }
 
@@ -137,20 +190,23 @@ async function runSearch(brancheLabel, stadt) {
    ============================================================ */
 function fdInitDropdown() {
   $("#fd-branche").innerHTML = BRANCHEN.map((b) => `<option value="${esc(b.label)}">${esc(b.label)}</option>`).join("");
+  if ($("#fd-radius")) $("#fd-radius").innerHTML = RADIUS_OPTIONS.map((r) => `<option value="${r}" ${r === 10 ? "selected" : ""}>${r} km</option>`).join("");
 }
 
 async function fdSearch() {
   const branche = $("#fd-branche").value;
   const stadt = $("#fd-stadt").value.trim();
+  const radius = Number($("#fd-radius").value) || 10;
   if (!stadt) { toast("Bitte einen Ort eingeben"); return; }
   const btn = $("#fd-search");
   btn.disabled = true;
   fdStatus("⏳ Suche läuft … (Ort wird lokalisiert)");
   try {
-    const leads = await runSearch(branche, stadt);
+    const leads = await runSearch(branche, stadt, radius);
     finder.lastResults = leads;
-    fdStatus(`${leads.length} Firmen gefunden${leads.length ? "" : " – andere Branche/Stadt probieren"}`);
-    fdRenderResults(leads, branche, stadt);
+    const ketten = leads.chainsRemoved ? ` · ${leads.chainsRemoved} Ketten aussortiert` : "";
+    fdStatus(`${leads.length} Firmen im Umkreis von ${radius} km${ketten}${leads.length ? "" : " – andere Branche/Ort probieren"}`);
+    fdRenderResults(leads, branche, `${stadt} ${radius}km`);
   } catch (e) {
     fdStatus("⚠️ " + e.message);
     $("#fd-results").innerHTML = "";
@@ -192,7 +248,7 @@ function fdImport(leads, sourceLabel) {
   const res = Store.importLeads(tagged);
   toast(`${res.added} neue Leads übernommen${res.skipped ? `, ${res.skipped} Duplikate` : ""} ✅`);
   renderAll();
-  if (typeof window.autoSendNewLeads === "function") window.autoSendNewLeads(res.addedLeads);
+  // Kein Auto-Versand mehr: Leads gehen nur über die Vorschau in der Arbeitsliste raus.
   return res;
 }
 
@@ -201,12 +257,13 @@ function fdImport(leads, sourceLabel) {
    ============================================================ */
 function fdAddQueue() {
   const branche = $("#fd-branche").value, stadt = $("#fd-stadt").value.trim();
+  const radius = Number($("#fd-radius").value) || 10;
   if (!stadt) { toast("Bitte erst einen Ort eingeben"); return; }
   const cfg = readFinder();
-  if (cfg.queue.some((q) => q.branche === branche && q.stadt.toLowerCase() === stadt.toLowerCase())) {
+  if (cfg.queue.some((q) => q.branche === branche && q.stadt.toLowerCase() === stadt.toLowerCase() && (q.radius || 10) === radius)) {
     toast("Diese Suche ist schon gespeichert"); return;
   }
-  cfg.queue.push({ branche, stadt });
+  cfg.queue.push({ branche, stadt, radius });
   writeFinder(cfg);
   fdRenderQueue();
   toast("Zur Auto-Suche hinzugefügt");
@@ -218,7 +275,7 @@ function fdRenderQueue() {
   if (!cfg.queue.length) { c.innerHTML = `<div class="muted small">Noch keine Suchen gespeichert. Branche + Stadt wählen und „＋ Zur Auto-Suche" klicken.</div>`; return; }
   c.innerHTML = cfg.queue.map((q, i) => `
     <div class="fd-queue-item">
-      <span>🔎 ${esc(q.branche)} · <b>${esc(q.stadt)}</b></span>
+      <span>🔎 ${esc(q.branche)} · <b>${esc(q.stadt)}</b> · ${q.radius || 10} km</span>
       <button class="icon-btn" data-del="${i}" title="Entfernen">✕</button>
     </div>`).join("");
   $$("#fd-queue-list [data-del]").forEach((b) => b.addEventListener("click", () => {
@@ -250,10 +307,10 @@ async function autoTick() {
   const q = cfg.queue[autoIndex % cfg.queue.length];
   autoIndex++;
   try {
-    const leads = await runSearch(q.branche, q.stadt);
+    const leads = await runSearch(q.branche, q.stadt, q.radius || 10);
     const res = Store.importLeads(leads.map((l) => ({ ...l, source: `Auto: ${q.branche} · ${q.stadt}` })));
     fdLog(`${q.branche} · ${q.stadt}: ${res.added} neu${res.skipped ? `, ${res.skipped} bekannt` : ""}`);
-    if (res.added) { renderAll(); if (typeof window.autoSendNewLeads === "function") window.autoSendNewLeads(res.addedLeads); }
+    if (res.added) renderAll(); // nur importieren – gesendet wird nie automatisch
   } catch (e) {
     fdLog(`⚠️ ${q.branche} · ${q.stadt}: ${e.message}`);
   } finally {

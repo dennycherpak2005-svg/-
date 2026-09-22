@@ -218,6 +218,8 @@ function normalizeLead(input) {
     position: (input.position || "").trim(),
     website: (input.website || "").trim(),
     location: (input.location || "").trim(),
+    city: (input.city || "").trim(),
+    country: (input.country || "").trim().toUpperCase(),
     source: (input.source || "Manuell").trim(),
     temperature: input.temperature || "kalt",
     status: input.status || "offen",

@@ -809,13 +809,33 @@ function renderN8nLog() {
     : `<div class="muted small">Noch nichts gesendet.</div>`;
 }
 
+/** Ist "name" nur der Firmenname (Finder-Leads)? Dann ist es KEIN Ansprechpartner. */
+function personName(l) {
+  const n = (l.name || "").trim(), c = (l.company || "").trim();
+  if (!n || (c && n.toLowerCase() === c.toLowerCase())) return "";
+  return n;
+}
 function leadPayload(l) {
   return {
-    id: l.id, name: l.name, email: l.email, phone: l.phone,
-    company: l.company, position: l.position, website: l.website,
-    location: l.location, source: l.source, temperature: l.temperature, status: l.status,
+    id: l.id, name: personName(l), email: l.email, phone: l.phone,
+    company: l.company || l.name, position: l.position, website: l.website,
+    location: l.location, city: l.city || "", country: l.country || "",
+    source: l.source, temperature: l.temperature, status: l.status,
   };
 }
+
+/* ---------- Tageslimit (Erstmails) ---------- */
+const N8N_DAILY_DEFAULT = 30;
+function dailyLimit() { return Number(n8nConfig().dailyLimit) || N8N_DAILY_DEFAULT; }
+function sentToday() {
+  const start = new Date(); start.setHours(0, 0, 0, 0);
+  const t0 = start.getTime();
+  return Store.getLeads().reduce((n, l) => n + (l.activities || []).filter((a) =>
+    a.at >= t0 && (a.outcome || "").includes("Cold-Mail an n8n")).length, 0);
+}
+function remainingToday() { return Math.max(0, dailyLimit() - sentToday()); }
+function leadChainReason(l) { return typeof window.chainReason === "function" ? window.chainReason(l) : ""; }
+const flag = (c) => ({ CH: "🇨🇭", DE: "🇩🇪", AT: "🇦🇹" }[c] || (c ? c : "❔"));
 
 /** POST an n8n. Versucht normales JSON (mit Bestätigung),
  *  fällt bei CORS auf „fire-and-forget" zurück (Daten kommen trotzdem an). */
@@ -840,11 +860,22 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
   // E-Mail ODER Website reicht – n8n holt die E-Mail notfalls von der Website
   const withContact = leads.filter((l) => l && (l.email || l.website));
   // 🔒 ZENTRALER SCHUTZ 1: "Kein Interesse"/Kunde werden NIE angeschrieben (Opt-out).
-  const blocked = withContact.filter(isOptedOut);
-  let eligible = withContact.filter((l) => !isOptedOut(l));
+  // 🔒 ZENTRALER SCHUTZ 1b: Ketten/Konzerne und Adressen wie privacy@/jobs@ nie.
+  const blocked = withContact.filter((l) => isOptedOut(l) || leadChainReason(l));
+  let eligible = withContact.filter((l) => !isOptedOut(l) && !leadChainReason(l));
   // 🔒 ZENTRALER SCHUTZ 2: kein Doppel-Versand. Max. 1 Erstmail, max. 1 Follow-up.
   const dup = eligible.filter((l) => (mode === "followup" ? alreadyFollowedUp(l) : alreadyColdMailed(l)));
-  const list = eligible.filter((l) => (mode === "followup" ? !alreadyFollowedUp(l) : !alreadyColdMailed(l)));
+  let list = eligible.filter((l) => (mode === "followup" ? !alreadyFollowedUp(l) : !alreadyColdMailed(l)));
+  // 🔒 ZENTRALER SCHUTZ 3: Tageslimit für Erstmails.
+  let overLimit = 0;
+  if (mode === "first") {
+    const rest = remainingToday();
+    if (list.length > rest) { overLimit = list.length - rest; list = list.slice(0, rest); }
+    if (!list.length && overLimit) {
+      toast(`Tageslimit erreicht (${dailyLimit()}) – morgen geht's weiter 🔒`);
+      return;
+    }
+  }
   if (!list.length) {
     if (!opts.silent) {
       const parts = [];
@@ -864,26 +895,76 @@ async function pushToN8n(leads, mode = "first", opts = {}) {
       patch.nextFollowUp = mode === "followup" ? null : Date.now() + 3 * 86400000;
       Store.logActivity(l.id, patch);
     } else fail++;
+    await new Promise((r) => setTimeout(r, 400)); // nicht im Schwarm feuern
   }
-  const skipped = blocked.length + dup.length;
-  n8nLog(`${ok} ${label}(s) gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}${skipped ? `, ${skipped} übersprungen (Opt-out/Doppel)` : ""}`);
+  const skipped = blocked.length + dup.length + overLimit;
+  n8nLog(`${ok} ${label}(s) gesendet${fail ? `, ${fail} fehlgeschlagen` : ""}${skipped ? `, ${skipped} übersprungen (Opt-out/Kette/Doppel/Limit)` : ""}`);
   if (!opts.silent) toast(`${ok} ${label} gesendet${skipped ? ` · ${skipped} geschützt 🔒` : ""}${fail ? ` (${fail} Fehler)` : ""}`);
   renderAll();
 }
 
 /** Wird vom Lead-Finder nach dem Import aufgerufen (Auto-Versand). */
-window.autoSendNewLeads = function (addedLeads) {
-  const cfg = n8nConfig();
-  if (cfg.auto && cfg.url && addedLeads && addedLeads.length) {
-    pushToN8n(addedLeads, "first", { silent: true });
-  }
-};
+/** Auto-Versand ist bewusst abgeschaltet: nichts geht ungesehen raus. */
+window.autoSendNewLeads = function () { /* absichtlich leer */ };
+
+
+/* ---------- Versand-Vorschau: jeder Lead wird vor dem Senden gesehen ---------- */
+function openSendPreview() {
+  const list = filtered().filter((l) => (l.email || l.website) && !isOptedOut(l) && !alreadyColdMailed(l));
+  const ok = list.filter((l) => !leadChainReason(l));
+  const bad = list.filter((l) => leadChainReason(l));
+  const rest = remainingToday();
+  if (!ok.length) { toast(bad.length ? `Nur Ketten/Konzerne in der Liste (${bad.length}) – nichts sendbar 🔒` : "Keine neuen sendbaren Leads in der Liste"); return; }
+  if (!rest) { toast(`Tageslimit erreicht (${dailyLimit()}) – morgen geht's weiter 🔒`); return; }
+
+  $("#modal").innerHTML = `
+    <div class="modal-head">
+      <div><div class="mh-title">🚀 Erstmails prüfen</div>
+      <div class="mh-sub">Heute noch frei: <b>${rest}</b> von ${dailyLimit()} · ${ok.length} sendbar${bad.length ? ` · ${bad.length} Ketten ausgeblendet` : ""}</div></div>
+      <button class="x" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="muted small" style="margin-top:0">Nur angehakte Leads gehen raus. Lieber 10 passende als 50 zufällige.</p>
+      <div class="fd-list" style="max-height:50vh;overflow:auto">
+        ${ok.map((l, i) => `
+          <label class="fd-item">
+            <input type="checkbox" data-i="${i}" ${i < rest ? "checked" : ""} />
+            <div class="fd-item-main">
+              <div class="fd-item-name">${flag(l.country)} ${esc(l.company || l.name)}</div>
+              <div class="fd-item-sub">${esc(l.email || "Mail wird aus Website geholt")}${l.website ? " · 🌐 " + esc(domainOf(l.website)) : ""}${l.location ? " · " + esc(l.location) : ""} · ${esc(brancheOf(l))}</div>
+            </div>
+          </label>`).join("")}
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="sp-cancel">Abbrechen</button>
+      <button class="btn" id="sp-none">Keine</button>
+      <span class="muted small" id="sp-count" style="align-self:center"></span>
+      <button class="btn btn-primary" id="sp-send" style="margin-left:auto">Senden</button>
+    </div>`;
+  openOverlay();
+  const boxes = () => $$("#modal .fd-list input[type=checkbox]");
+  const update = () => {
+    const n = boxes().filter((b) => b.checked).length;
+    $("#sp-count").textContent = `${n} ausgewählt${n > rest ? ` – nur ${rest} gehen heute raus` : ""}`;
+  };
+  boxes().forEach((b) => b.addEventListener("change", update));
+  update();
+  $("#modal-close").onclick = $("#sp-cancel").onclick = closeModal;
+  $("#sp-none").onclick = () => { boxes().forEach((b) => (b.checked = false)); update(); };
+  $("#sp-send").onclick = () => {
+    const picks = boxes().filter((b) => b.checked).map((b) => ok[Number(b.dataset.i)]);
+    if (!picks.length) { toast("Nichts ausgewählt"); return; }
+    closeModal();
+    pushToN8n(picks, "first");
+  };
+}
 
 function initN8n() {
   const cfg = n8nConfig();
   if ($("#n8n-url")) $("#n8n-url").value = cfg.url || "";
   if ($("#n8n-followup-url")) $("#n8n-followup-url").value = cfg.followupUrl || "";
-  if ($("#n8n-auto")) $("#n8n-auto").checked = !!cfg.auto;
+  if (cfg.auto) { cfg.auto = false; n8nSave(cfg); } // alten Auto-Versand sicher ausschalten
   renderN8nLog();
   updateN8nState();
 
@@ -895,7 +976,6 @@ function initN8n() {
     updateN8nState();
     toast("Gespeichert ✅");
   };
-  $("#n8n-auto").addEventListener("change", (e) => { const c = n8nConfig(); c.auto = e.target.checked; n8nSave(c); updateN8nState(); toast(e.target.checked ? "Auto-Versand an 🤖" : "Auto-Versand aus"); });
   $("#n8n-test").onclick = async () => {
     const url = $("#n8n-url").value.trim();
     if (!url) { toast("Bitte erst die Webhook-URL eintragen"); return; }
@@ -905,17 +985,7 @@ function initN8n() {
     n8nLog(res.ok ? `🧪 Test ${to ? "an " + to : "(nur Verbindung)"} ausgelöst (${res.status})` : `🧪 Test fehlgeschlagen: ${res.status}`);
     toast(res.ok ? (to ? "Test-Mail ausgelöst 🧪" : "Verbindung getestet ✅") : "Test fehlgeschlagen");
   };
-  $("#btn-n8n-bulk").onclick = () => {
-    const list = filtered().filter((l) => l.email || l.website);
-    // Nur noch nicht angeschriebene zählen, damit die Zahl stimmt (Doppel-Schutz greift eh in pushToN8n).
-    const sendable = list.filter((l) => !isOptedOut(l) && !alreadyColdMailed(l));
-    if (!sendable.length) { toast("Keine neuen sendbaren Leads in der Liste"); return; }
-    const ans = prompt(`Wie viele Erstmails jetzt senden?\n\n${sendable.length} noch nicht angeschriebene Leads in der Liste.\nZahl eingeben (z. B. 20) – oder leer lassen = alle.`, "20");
-    if (ans === null) return; // Abbruch
-    const n = parseInt(ans, 10);
-    const batch = (!ans.trim() || isNaN(n) || n <= 0) ? sendable : sendable.slice(0, n);
-    pushToN8n(batch, "first");
-  };
+  $("#btn-n8n-bulk").onclick = openSendPreview;
   if ($("#btn-followup-due")) $("#btn-followup-due").onclick = () => {
     const list = Store.getLeads().filter((l) => followDue(l) && (l.email || l.website));
     if (!list.length) { toast("Keine fälligen Follow-ups mit E-Mail/Website"); return; }
